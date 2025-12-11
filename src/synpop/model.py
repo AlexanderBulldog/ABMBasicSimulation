@@ -138,6 +138,8 @@ class EconomyModel(Model):
                 "Bank_Loans": lambda m: m.bank.state.loans_firms + m.bank.state.loans_hh,
                 "Bank_Deposits": lambda m: m.bank.state.deposits_firms + m.bank.state.deposits_hh,
                 "Defaults": lambda m: m._last_defaults,
+                "DefaultsHH": lambda m: m._last_defaults_hh,
+                "DefaultsFirm": lambda m: m._last_defaults_firm,
                 "BalanceOK": lambda m: m._last_balance_ok,
             }
         )
@@ -147,6 +149,8 @@ class EconomyModel(Model):
         self._last_consumption = 0.0
         self._last_wage_bill = 0.0
         self._last_defaults = 0
+        self._last_defaults_hh = 0
+        self._last_defaults_firm = 0
         self._last_balance_ok = True
         self._demand_floor_value = self.demand_floor if self.demand_floor is not None else 0.0
 
@@ -269,13 +273,19 @@ class EconomyModel(Model):
 
     def _handle_defaults(self) -> None:
         defaults = 0
+        defaults_hh = 0
+        defaults_firm = 0
         for h in self.households:
             if h.maybe_default(max_debt_income=self.hh_debt_cap_multiplier):
                 defaults += 1
+                defaults_hh += 1
         for f in self.firms:
             if f.maybe_default(max_debt_revenue=self.firm_debt_cap_multiplier):
                 defaults += 1
+                defaults_firm += 1
         self._last_defaults = defaults
+        self._last_defaults_hh = defaults_hh
+        self._last_defaults_firm = defaults_firm
 
     def _check_balance(self) -> None:
         assets = self.bank.state.loans_firms + self.bank.state.loans_hh + self.bank.state.reserves

@@ -26,6 +26,9 @@ def summarize_run(df, window: int = 20) -> Dict[str, float]:
         "Firm_Debt",
         "Bank_Equity",
         "Defaults",
+        "DefaultsHH",
+        "DefaultsFirm",
+        "BalanceOK",
     ]
     return {f"{m}_mean": float(tail[m].mean()) for m in metrics if m in tail}
 
