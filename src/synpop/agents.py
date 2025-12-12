@@ -82,7 +82,11 @@ class Household(Agent):
         income_ref = max(self.last_income, np.mean(self._wage_history) if self._wage_history else 0.0, 1e-6)
         if self.debt > max_debt_income * income_ref:
             self.defaulted = True
+            loss = self.debt
             self.debt = 0.0
+            self.deposit = 0.0
+            if loss > 0:
+                self.model.bank.absorb_loss(loss)
             return True
         return False
 
@@ -98,11 +102,13 @@ class Firm(Agent):
     ) -> None:
         super().__init__(model)
         self.productivity = productivity
+        self.initial_cash = initial_cash
         self.cash = initial_cash
         self.debt = 0.0
         self.inventory = 0.0
         self.workers: List[int] = []
         self.last_demand = model.initial_demand_share()
+        self.last_revenue = 0.0
         self.last_production = 0.0
         self.market_share = market_share
         self.price = model.base_price * (1 + base_markup)
@@ -111,6 +117,7 @@ class Firm(Agent):
 
     def begin_step(self) -> None:
         self.last_production = 0.0
+        self.last_revenue = 0.0
         self.defaulted = False
 
     def target_workers(self, adapt_rate: float, base_wage: float) -> int:
@@ -170,6 +177,9 @@ class Firm(Agent):
             self.cash += loan
         paid = min(self.cash, wage_bill)
         self.cash -= paid
+        overhead_rate = clamp(self.base_markup, 0.02, 0.2)
+        overhead = overhead_rate * wage_bill
+        self.cash -= overhead
         effective_labor = sum(self.model.effective_skill(self._worker_by_id(wid)) for wid in self.workers)
         output = self.productivity * effective_labor
         self.inventory += output
@@ -183,17 +193,33 @@ class Firm(Agent):
         return None
 
     def maybe_default(self, max_debt_revenue: float) -> bool:
-        revenue_ref = max(self.last_demand, 1e-6)
-        if self.debt > max_debt_revenue * revenue_ref and self.cash < 0:
+        revenue_ref = max(self.last_revenue, self.last_demand, 1e-6)
+        if self.debt > max_debt_revenue * revenue_ref:
             self.defaulted = True
+            loss = self.debt
             self.debt = 0.0
             self.inventory = 0.0
             self.cash = 0.0
+            self.last_revenue = 0.0
             for uid in self.workers:
                 hh = self._worker_by_id(uid)
                 if hh:
                     hh.employed = False
                     hh.employer_id = None
             self.workers = []
+            if loss > 0:
+                self.model.bank.absorb_loss(loss)
+            self._restart()
             return True
         return False
+
+    def _restart(self) -> None:
+        self.cash = self.initial_cash
+        self.inventory = 0.0
+        self.debt = 0.0
+        self.workers = []
+        self.last_revenue = 0.0
+        self.last_production = 0.0
+        self.last_demand = self.model.initial_demand_share()
+        self.defaulted = False
+        self.price = self.model.base_price * (1 + self.base_markup)

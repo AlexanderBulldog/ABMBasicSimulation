@@ -261,6 +261,7 @@ class EconomyModel(Model):
             if f.inventory < 0:
                 f.inventory = 0.0
             f.cash += revenue
+            f.last_revenue = revenue
             total_sold_units += sold
             smoothed = (1 - self.demand_smoothing) * f.last_demand + self.demand_smoothing * demand
             f.last_demand = max(self._demand_floor_value, smoothed)

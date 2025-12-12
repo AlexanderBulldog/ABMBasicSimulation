@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
+from .utils import clamp
+
 
 @dataclass
 class BankState:
@@ -32,8 +34,6 @@ class Bank:
 
     def accrue_interest(self, hh_list, firm_list) -> None:
         """Apply interest to deposits and loans; adjust equity by net margin."""
-        if self.failed:
-            return
         total_deposit_int = 0.0
         total_loan_int = 0.0
 
@@ -45,7 +45,10 @@ class Bank:
             if h.debt > 0:
                 interest = h.debt * self.loan_rate
                 h.debt += interest
-                total_loan_int += interest
+                service = min(h.deposit, interest)
+                h.deposit -= service
+                h.debt -= service
+                total_loan_int += service
 
         for f in firm_list:
             if f.cash > 0:
@@ -55,10 +58,19 @@ class Bank:
             if f.debt > 0:
                 interest = f.debt * self.loan_rate
                 f.debt += interest
-                total_loan_int += interest
+                service = min(f.cash, interest)
+                f.cash -= service
+                f.debt -= service
+                total_loan_int += service
 
         net = total_loan_int - total_deposit_int
         self.state.equity += net
+
+    def absorb_loss(self, amount: float) -> None:
+        """Reduce bank equity by realized credit losses."""
+        if amount <= 0:
+            return
+        self.state.equity -= amount
 
     def available_credit(self) -> float:
         if self.failed:
@@ -70,7 +82,12 @@ class Bank:
     def grant_loan(self, requested: float) -> float:
         if self.failed or requested <= 0:
             return 0.0
-        return min(requested, self.available_credit())
+        cap = self.credit_multiplier * max(self.state.equity, 0.0)
+        used = self.state.loans_firms + self.state.loans_hh
+        available = max(0.0, cap - used)
+        base = min(requested, available)
+        prudential_factor = clamp(1.0 - (used / cap) if cap > 0 else 1.0, 0.0, 1.0)
+        return base * prudential_factor
 
     def update_balance_sheet(self, hh_list, firm_list) -> None:
         self.state.deposits_hh = sum(h.deposit for h in hh_list)
@@ -80,5 +97,3 @@ class Bank:
         liabilities = self.state.deposits_hh + self.state.deposits_firms + self.state.equity
         assets = self.state.loans_firms + self.state.loans_hh
         self.state.reserves = liabilities - assets
-        if self.state.equity < 0:
-            self.failed = True
