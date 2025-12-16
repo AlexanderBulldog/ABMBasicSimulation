@@ -18,6 +18,28 @@ for p in (str(SCRIPTS), str(SRC)):
 from run_operator import PARAM_BOUNDS, run_batch  # noqa: E402
 
 
+def load_bounds_from_refined_csv(path: Path, kind: str = "p05p95") -> Dict[str, Tuple[float, float]]:
+    df = pd.read_csv(path)
+    out: Dict[str, Tuple[float, float]] = {}
+    for _, row in df.iterrows():
+        param = str(row["param"])
+        if kind == "minmax":
+            low = float(row["nroy_min"])
+            high = float(row["nroy_max"])
+        else:
+            low = float(row["nroy_p05"])
+            high = float(row["nroy_p95"])
+        if param in PARAM_BOUNDS:
+            base_low, base_high = PARAM_BOUNDS[param]
+            low = max(base_low, min(low, base_high))
+            high = max(base_low, min(high, base_high))
+        if high <= low:
+            continue
+        out[param] = (low, high)
+    # Fall back to defaults if something goes wrong.
+    return out if len(out) >= 3 else dict(PARAM_BOUNDS)
+
+
 def lhs_sample(
     bounds: Dict[str, Tuple[float, float]],
     n: int,
@@ -56,6 +78,19 @@ def parse_args():
         help="Minimum BalanceOK_share to consider run acceptable",
     )
     parser.add_argument(
+        "--bounds-csv",
+        type=str,
+        default="",
+        help="Optional refined bounds CSV (output/results/refined_intervals.csv) for wave-2 sampling",
+    )
+    parser.add_argument(
+        "--bounds-kind",
+        type=str,
+        choices=["p05p95", "minmax"],
+        default="p05p95",
+        help="Which columns from refined CSV to use as bounds",
+    )
+    parser.add_argument(
         "--format",
         type=str,
         choices=["parquet", "csv"],
@@ -74,7 +109,10 @@ def parse_args():
 def main():
     args = parse_args()
     seeds: Sequence[int] = [int(x) for x in args.seeds.split(",") if x]
-    samples = lhs_sample(PARAM_BOUNDS, n=args.n, seed=args.seed)
+    bounds = dict(PARAM_BOUNDS)
+    if args.bounds_csv:
+        bounds = load_bounds_from_refined_csv(Path(args.bounds_csv), kind=args.bounds_kind)
+    samples = lhs_sample(bounds, n=args.n, seed=args.seed)
     df = run_batch(
         samples,
         seeds=seeds,

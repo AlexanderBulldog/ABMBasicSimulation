@@ -1,0 +1,16 @@
+{
+  "Employment_mean": { "target": 65.0, "sigma_obs": 5.0, "sigma_model": 7.5 },
+  "Output_mean": { "target": 80.0, "sigma_obs": 10.0, "sigma_model": 15.0 },
+  "Consumption_mean": { "target": 80.0, "sigma_obs": 10.0, "sigma_model": 15.0 },
+  "AvgPrice_mean": { "target": 1.05, "sigma_obs": 0.05, "sigma_model": 0.1 },
+  "DefaultsHH_rate": { "target": 0.004, "sigma_obs": 0.002, "sigma_model": 0.003 },
+  "BankFailed_share": { "target": 0.0, "sigma_obs": 0.01, "sigma_model": 0.01 },
+  "BankResolved_share": { "target": 0.05, "sigma_obs": 0.03, "sigma_model": 0.05 },
+  "BankResolutionHaircut_mean": { "target": 0.02, "sigma_obs": 0.01, "sigma_model": 0.02 },
+  "BankBailedOut_share": { "target": 0.02, "sigma_obs": 0.02, "sigma_model": 0.03 },
+  "BankBailoutAmount_mean": { "target": 0.2, "sigma_obs": 0.2, "sigma_model": 0.3 },
+  "Transfers_mean": { "target": 6.5, "sigma_obs": 2.0, "sigma_model": 3.0 },
+  "HH_Deposit_mean": { "target": 1.5, "sigma_obs": 1.0, "sigma_model": 1.5 },
+  "Bank_Equity_mean": { "target": 10.0, "sigma_obs": 7.5, "sigma_model": 10.0 }
+}
+
