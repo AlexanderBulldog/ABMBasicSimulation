@@ -25,6 +25,7 @@ def summarize_run(df, window: int = 20) -> Dict[str, float]:
         "HH_Deposit",
         "Firm_Debt",
         "Bank_Equity",
+        "BankFailed",
         "Defaults",
         "DefaultsHH",
         "DefaultsFirm",

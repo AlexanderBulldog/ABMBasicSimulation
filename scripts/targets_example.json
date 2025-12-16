@@ -2,7 +2,5 @@
   "Employment_mean": { "target": 60.0, "sigma_obs": 10.0, "sigma_model": 5.0 },
   "Output_mean": { "target": 70.0, "sigma_obs": 15.0, "sigma_model": 10.0 },
   "Bank_Equity_mean": { "target": 0.0, "sigma_obs": 5.0, "sigma_model": 5.0 },
-  "DefaultsHH_rate": { "target": 0.02, "sigma_obs": 0.02, "sigma_model": 0.02 },
-  "DefaultsFirm_rate": { "target": 0.02, "sigma_obs": 0.02, "sigma_model": 0.02 },
-  "BalanceOK_share": { "target": 0.95, "sigma_obs": 0.05, "sigma_model": 0.02 }
+  "DefaultsHH_rate": { "target": 0.02, "sigma_obs": 0.02, "sigma_model": 0.02 }
 }

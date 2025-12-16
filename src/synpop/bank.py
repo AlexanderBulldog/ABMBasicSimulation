@@ -34,14 +34,9 @@ class Bank:
 
     def accrue_interest(self, hh_list, firm_list) -> None:
         """Apply interest to deposits and loans; adjust equity by net margin."""
-        total_deposit_int = 0.0
         total_loan_int = 0.0
 
         for h in hh_list:
-            if h.deposit > 0:
-                interest = h.deposit * self.deposit_rate
-                h.deposit += interest
-                total_deposit_int += interest
             if h.debt > 0:
                 interest = h.debt * self.loan_rate
                 h.debt += interest
@@ -51,10 +46,6 @@ class Bank:
                 total_loan_int += service
 
         for f in firm_list:
-            if f.cash > 0:
-                interest = f.cash * self.deposit_rate
-                f.cash += interest
-                total_deposit_int += interest
             if f.debt > 0:
                 interest = f.debt * self.loan_rate
                 f.debt += interest
@@ -63,14 +54,37 @@ class Bank:
                 f.debt -= service
                 total_loan_int += service
 
+        total_deposits = sum(max(0.0, h.deposit) for h in hh_list) + sum(max(0.0, f.cash) for f in firm_list)
+        deposit_rate = self.deposit_rate if self.state.equity > 0 else 0.0
+        if total_deposits > 0 and deposit_rate > 0:
+            desired = deposit_rate * total_deposits
+            # Keep deposit interest within realized loan-interest cashflow; deposit_rate acts as a cap.
+            if desired > 0 and total_loan_int < desired:
+                deposit_rate *= total_loan_int / desired
+
+        total_deposit_int = 0.0
+        if deposit_rate > 0:
+            for h in hh_list:
+                if h.deposit > 0:
+                    interest = h.deposit * deposit_rate
+                    h.deposit += interest
+                    total_deposit_int += interest
+            for f in firm_list:
+                if f.cash > 0:
+                    interest = f.cash * deposit_rate
+                    f.cash += interest
+                    total_deposit_int += interest
+
         net = total_loan_int - total_deposit_int
         self.state.equity += net
+        self.failed = self.state.equity < 0
 
     def absorb_loss(self, amount: float) -> None:
         """Reduce bank equity by realized credit losses."""
         if amount <= 0:
             return
         self.state.equity -= amount
+        self.failed = self.state.equity < 0
 
     def available_credit(self) -> float:
         if self.failed:

@@ -46,9 +46,15 @@ def run_model(
     model.run_model(steps=steps)
     df = model.results_dataframe()
     summary = summarize_run(df, window=window)
-    summary["DefaultsHH_rate"] = float(df["DefaultsHH"].mean()) if "DefaultsHH" in df else np.nan
-    summary["DefaultsFirm_rate"] = float(df["DefaultsFirm"].mean()) if "DefaultsFirm" in df else np.nan
+    # Convert default counts per step into shares (0..1) for comparability across population sizes.
+    summary["DefaultsHH_rate"] = (
+        float(df["DefaultsHH"].mean()) / max(model.n_households, 1) if "DefaultsHH" in df else np.nan
+    )
+    summary["DefaultsFirm_rate"] = (
+        float(df["DefaultsFirm"].mean()) / max(model.n_firms, 1) if "DefaultsFirm" in df else np.nan
+    )
     summary["BalanceOK_share"] = float(df["BalanceOK"].mean()) if "BalanceOK" in df else np.nan
+    summary["BankFailed_share"] = float(df["BankFailed"].mean()) if "BankFailed" in df else 0.0
     summary["seed"] = seed
     return summary, df
 

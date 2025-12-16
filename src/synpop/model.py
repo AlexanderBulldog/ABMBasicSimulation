@@ -36,6 +36,10 @@ class EconomyModel(Model):
         skill_wage_weight: float = 0.0,
         hh_debt_cap_multiplier: float = 4.0,
         firm_debt_cap_multiplier: float = 2.0,
+        hh_default_trigger_multiplier: float = 1.5,
+        firm_default_trigger_multiplier: float = 1.5,
+        hh_loss_given_default: float = 0.6,
+        firm_loss_given_default: float = 0.6,
         base_price: float = 1.0,
         price_elasticity: float = 2.0,
         quality_weight: float = 0.0,
@@ -59,6 +63,10 @@ class EconomyModel(Model):
         self.skill_wage_weight = skill_wage_weight
         self.hh_debt_cap_multiplier = hh_debt_cap_multiplier
         self.firm_debt_cap_multiplier = firm_debt_cap_multiplier
+        self.hh_default_trigger_multiplier = clamp(hh_default_trigger_multiplier, 1.0, 10.0)
+        self.firm_default_trigger_multiplier = clamp(firm_default_trigger_multiplier, 1.0, 10.0)
+        self.hh_loss_given_default = clamp(hh_loss_given_default, 0.0, 1.0)
+        self.firm_loss_given_default = clamp(firm_loss_given_default, 0.0, 1.0)
         self.base_price = base_price
         self.price_elasticity = price_elasticity
         self.quality_weight = quality_weight
@@ -75,7 +83,7 @@ class EconomyModel(Model):
             loan_rate=loan_rate,
             deposit_rate=deposit_rate,
             credit_multiplier=bank_credit_multiplier,
-            init_equity=firm_initial_cash,
+            init_equity=firm_initial_cash * max(n_firms, 1),
         )
 
         self.households: List[Household] = []
@@ -98,6 +106,8 @@ class EconomyModel(Model):
                 skill=spec.get("skill"),
             )
             self.households.append(h)
+
+        self._avg_alpha = float(np.mean([h.alpha for h in self.households])) if self.households else 0.0
 
         firm_specs = builder.firms(
             n_firms,
@@ -137,6 +147,7 @@ class EconomyModel(Model):
                 "Bank_Equity": lambda m: m.bank.state.equity,
                 "Bank_Loans": lambda m: m.bank.state.loans_firms + m.bank.state.loans_hh,
                 "Bank_Deposits": lambda m: m.bank.state.deposits_firms + m.bank.state.deposits_hh,
+                "BankFailed": lambda m: bool(m.bank.failed),
                 "Defaults": lambda m: m._last_defaults,
                 "DefaultsHH": lambda m: m._last_defaults_hh,
                 "DefaultsFirm": lambda m: m._last_defaults_firm,
@@ -155,9 +166,13 @@ class EconomyModel(Model):
         self._demand_floor_value = self.demand_floor if self.demand_floor is not None else 0.0
 
     def initial_demand_share(self) -> float:
-        return (self.n_households * self.wage * clamp(self.initial_employment_rate, 0, 1)) / max(
-            self.n_firms, 1
-        )
+        """Initial per-firm expected demand in *units* (not currency)."""
+        employment_rate = clamp(self.initial_employment_rate, 0.0, 1.0)
+        expected_wage_bill = (self.n_households * employment_rate) * self.wage
+        expected_consumption = expected_wage_bill * clamp(self._avg_alpha, 0.0, 1.0)
+        unit_price = max(self.base_price, 1e-6)
+        total_units = expected_consumption / unit_price
+        return total_units / max(self.n_firms, 1)
 
     def _seed_initial_employment(self) -> None:
         target_jobs = int(self.initial_employment_rate * self.n_households)
@@ -229,8 +244,10 @@ class EconomyModel(Model):
             total_wage_bill += paid
             total_production += output
 
+            wage_bill = float(sum(wages))
+            pay_ratio = 1.0 if wage_bill <= 0 else max(0.0, min(1.0, paid / wage_bill))
             for worker, wage_amt in zip(workers, wages):
-                worker.receive_wage(wage_amt, firm.unique_id)
+                worker.receive_wage(wage_amt * pay_ratio, firm.unique_id)
 
         self._last_production = total_production
         self._last_wage_bill = total_wage_bill

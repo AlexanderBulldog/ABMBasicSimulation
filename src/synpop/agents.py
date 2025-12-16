@@ -80,9 +80,11 @@ class Household(Agent):
         if self.debt <= 0:
             return False
         income_ref = max(self.last_income, np.mean(self._wage_history) if self._wage_history else 0.0, 1e-6)
-        if self.debt > max_debt_income * income_ref:
+        threshold = max_debt_income * income_ref * getattr(self.model, "hh_default_trigger_multiplier", 1.0)
+        if self.debt > threshold:
             self.defaulted = True
-            loss = self.debt
+            lgd = getattr(self.model, "hh_loss_given_default", 1.0)
+            loss = self.debt * float(lgd)
             self.debt = 0.0
             self.deposit = 0.0
             if loss > 0:
@@ -131,7 +133,7 @@ class Firm(Agent):
             adjust = step if diff > 0 else -step
         target = max(0, current + adjust)
         affordable = int((self.cash / max(base_wage, 1e-6)))
-        return min(target, affordable) if self.model.enable_credit == False else target
+        return min(target, affordable) if not self.model.enable_credit else target
 
     def hire(self, available_workers: List[Household], needed: int) -> List[Household]:
         hires: List[Household] = []
@@ -180,6 +182,15 @@ class Firm(Agent):
         overhead_rate = clamp(self.base_markup, 0.02, 0.2)
         overhead = overhead_rate * wage_bill
         self.cash -= overhead
+        if self.cash < 0:
+            overdraft = -self.cash
+            if overdraft > 0 and self.model.enable_credit:
+                loan = bank.grant_loan(overdraft)
+                self.debt += loan
+                bank.state.loans_firms += loan
+                self.cash += loan
+            if self.cash < 0:
+                self.cash = 0.0
         effective_labor = sum(self.model.effective_skill(self._worker_by_id(wid)) for wid in self.workers)
         output = self.productivity * effective_labor
         self.inventory += output
@@ -193,10 +204,13 @@ class Firm(Agent):
         return None
 
     def maybe_default(self, max_debt_revenue: float) -> bool:
-        revenue_ref = max(self.last_revenue, self.last_demand, 1e-6)
-        if self.debt > max_debt_revenue * revenue_ref:
+        # last_demand is in units; convert to nominal revenue using the current price as a fallback.
+        revenue_ref = max(self.last_revenue, self.last_demand * self.price, 1e-6)
+        threshold = max_debt_revenue * revenue_ref * getattr(self.model, "firm_default_trigger_multiplier", 1.0)
+        if self.debt > threshold:
             self.defaulted = True
-            loss = self.debt
+            lgd = getattr(self.model, "firm_loss_given_default", 1.0)
+            loss = self.debt * float(lgd)
             self.debt = 0.0
             self.inventory = 0.0
             self.cash = 0.0
