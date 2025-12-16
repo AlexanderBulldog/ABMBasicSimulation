@@ -138,6 +138,7 @@ class EconomyModel(Model):
                 "Output": lambda m: m._last_output,
                 "Production": lambda m: m._last_production,
                 "Consumption": lambda m: m._last_consumption,
+                "Transfers": lambda m: m._last_transfers,
                 "HH_Deposit": lambda m: sum(h.deposit for h in m.households),
                 "HH_Debt": lambda m: sum(h.debt for h in m.households),
                 "Firm_Debt": lambda m: sum(f.debt for f in m.firms),
@@ -148,6 +149,11 @@ class EconomyModel(Model):
                 "Bank_Loans": lambda m: m.bank.state.loans_firms + m.bank.state.loans_hh,
                 "Bank_Deposits": lambda m: m.bank.state.deposits_firms + m.bank.state.deposits_hh,
                 "BankFailed": lambda m: bool(m.bank.failed),
+                "BankResolved": lambda m: bool(m.bank.last_resolved),
+                "BankResolutionAmount": lambda m: float(m.bank.last_resolution_amount),
+                "BankResolutionHaircut": lambda m: float(m.bank.last_resolution_haircut),
+                "BankBailedOut": lambda m: bool(m.bank.last_bailed_out),
+                "BankBailoutAmount": lambda m: float(m.bank.last_bailout_amount),
                 "Defaults": lambda m: m._last_defaults,
                 "DefaultsHH": lambda m: m._last_defaults_hh,
                 "DefaultsFirm": lambda m: m._last_defaults_firm,
@@ -159,6 +165,7 @@ class EconomyModel(Model):
         self._last_production = 0.0
         self._last_consumption = 0.0
         self._last_wage_bill = 0.0
+        self._last_transfers = 0.0
         self._last_defaults = 0
         self._last_defaults_hh = 0
         self._last_defaults_firm = 0
@@ -234,20 +241,29 @@ class EconomyModel(Model):
         total_output = 0.0
         total_production = 0.0
         total_wage_bill = 0.0
+        total_overhead = 0.0
         for firm in self.firms:
             workers = [self._household_by_id(wid) for wid in firm.workers]
             workers = [w for w in workers if w is not None]
             wages = [self._wage_for_worker(w) for w in workers]
 
             firm.set_price(self.wage)
-            paid, output = firm.produce_and_pay(wages, self.bank)
+            paid, output, overhead = firm.produce_and_pay(wages, self.bank)
             total_wage_bill += paid
             total_production += output
+            total_overhead += overhead
 
             wage_bill = float(sum(wages))
             pay_ratio = 1.0 if wage_bill <= 0 else max(0.0, min(1.0, paid / wage_bill))
             for worker, wage_amt in zip(workers, wages):
                 worker.receive_wage(wage_amt * pay_ratio, firm.unique_id)
+
+        # Recycle overhead (interpretable as taxes/fees/dividends) back to households as a lump-sum transfer.
+        if total_overhead > 0 and self.households:
+            per_hh = total_overhead / max(len(self.households), 1)
+            for h in self.households:
+                h.deposit += per_hh
+        self._last_transfers = total_overhead
 
         self._last_production = total_production
         self._last_wage_bill = total_wage_bill

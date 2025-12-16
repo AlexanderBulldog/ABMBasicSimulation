@@ -25,12 +25,23 @@ class Bank:
         deposit_rate: float,
         credit_multiplier: float = 6.0,
         init_equity: float = 5.0,
+        recap_ratio: float = 0.06,
+        allow_bailout: bool = True,
+        bailout_min_equity: float = 1.0,
     ):
         self.loan_rate = loan_rate
         self.deposit_rate = deposit_rate
         self.credit_multiplier = credit_multiplier
+        self.recap_ratio = clamp(recap_ratio, 0.0, 0.5)
+        self.allow_bailout = bool(allow_bailout)
+        self.bailout_min_equity = max(0.0, float(bailout_min_equity))
         self.state = BankState(equity=init_equity, reserves=init_equity)
         self.failed = False
+        self.last_resolution_amount = 0.0
+        self.last_resolution_haircut = 0.0
+        self.last_resolved = False
+        self.last_bailout_amount = 0.0
+        self.last_bailed_out = False
 
     def accrue_interest(self, hh_list, firm_list) -> None:
         """Apply interest to deposits and loans; adjust equity by net margin."""
@@ -77,14 +88,12 @@ class Bank:
 
         net = total_loan_int - total_deposit_int
         self.state.equity += net
-        self.failed = self.state.equity < 0
 
     def absorb_loss(self, amount: float) -> None:
         """Reduce bank equity by realized credit losses."""
         if amount <= 0:
             return
         self.state.equity -= amount
-        self.failed = self.state.equity < 0
 
     def available_credit(self) -> float:
         if self.failed:
@@ -104,10 +113,63 @@ class Bank:
         return base * prudential_factor
 
     def update_balance_sheet(self, hh_list, firm_list) -> None:
+        self.last_resolution_amount = 0.0
+        self.last_resolution_haircut = 0.0
+        self.last_resolved = False
+        self.last_bailout_amount = 0.0
+        self.last_bailed_out = False
+
         self.state.deposits_hh = sum(h.deposit for h in hh_list)
         self.state.deposits_firms = sum(f.cash for f in firm_list)
         self.state.loans_hh = sum(h.debt for h in hh_list)
         self.state.loans_firms = sum(f.debt for f in firm_list)
+
+        if self.state.equity < 0:
+            self._resolve_insolvency(hh_list, firm_list)
+            self.state.deposits_hh = sum(h.deposit for h in hh_list)
+            self.state.deposits_firms = sum(f.cash for f in firm_list)
+            self.state.loans_hh = sum(h.debt for h in hh_list)
+            self.state.loans_firms = sum(f.debt for f in firm_list)
+
         liabilities = self.state.deposits_hh + self.state.deposits_firms + self.state.equity
         assets = self.state.loans_firms + self.state.loans_hh
         self.state.reserves = liabilities - assets
+        self.failed = self.state.equity < 0
+
+    def _resolve_insolvency(self, hh_list, firm_list) -> None:
+        """Bail-in deposits to restore solvency, targeting a small positive equity buffer."""
+        total_deposits = sum(max(0.0, h.deposit) for h in hh_list) + sum(max(0.0, f.cash) for f in firm_list)
+        if total_deposits <= 0:
+            if self.allow_bailout and self.bailout_min_equity > 0:
+                self.last_bailout_amount = float(-self.state.equity + self.bailout_min_equity)
+                self.last_bailed_out = True
+                self.state.equity += self.last_bailout_amount
+                return
+            self.failed = True
+            return
+
+        equity = self.state.equity
+        r = self.recap_ratio
+        # Choose bail-in X so that: equity' = equity + X and equity' = r * deposits', deposits' = total - X.
+        needed = (r * total_deposits - equity) / (1.0 + r)
+        needed = max(0.0, min(needed, total_deposits))
+        haircut = needed / total_deposits if total_deposits > 0 else 1.0
+
+        if haircut > 0:
+            factor = 1.0 - haircut
+            for h in hh_list:
+                if h.deposit > 0:
+                    h.deposit *= factor
+            for f in firm_list:
+                if f.cash > 0:
+                    f.cash *= factor
+            self.state.equity += needed
+            self.last_resolution_amount = float(needed)
+            self.last_resolution_haircut = float(haircut)
+            self.last_resolved = True
+
+        if self.state.equity < 0 and self.allow_bailout and self.bailout_min_equity > 0:
+            bailout = -self.state.equity + self.bailout_min_equity
+            self.state.equity += bailout
+            self.last_bailout_amount = float(bailout)
+            self.last_bailed_out = True

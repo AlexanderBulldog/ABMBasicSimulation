@@ -169,7 +169,7 @@ class Firm(Agent):
         self,
         wages: List[float],
         bank: Bank,
-    ) -> Tuple[float, float]:
+    ) -> Tuple[float, float, float]:
         wage_bill = sum(wages)
         if wage_bill > self.cash and self.model.enable_credit:
             gap = wage_bill - self.cash
@@ -195,7 +195,7 @@ class Firm(Agent):
         output = self.productivity * effective_labor
         self.inventory += output
         self.last_production = output
-        return paid, output
+        return paid, output, float(overhead)
 
     def _worker_by_id(self, uid: int) -> Optional[Household]:
         for h in self.model.households:

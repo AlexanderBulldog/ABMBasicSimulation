@@ -19,19 +19,20 @@ DEFAULT_STEPS = 150
 DEFAULT_WINDOW = 30
 
 PARAM_BOUNDS: Dict[str, Tuple[float, float]] = {
-    "alpha_mean": (0.1, 0.95),
-    "alpha_std": (0.01, 0.2),
-    "wage": (0.5, 2.0),
-    "productivity": (0.5, 2.5),
-    "loan_rate": (0.005, 0.15),
-    "deposit_rate": (0.0, 0.06),
-    "bank_credit_multiplier": (2.0, 12.0),
-    "hh_debt_cap_multiplier": (2.0, 8.0),
-    "firm_debt_cap_multiplier": (1.0, 5.0),
-    "adaptation_rate": (0.1, 1.0),
-    "price_elasticity": (0.5, 4.0),
-    "skill_wage_weight": (0.0, 0.8),
-    "demand_smoothing": (0.0, 0.5),
+    # Narrowed to reduce collapse/insolvency regimes and improve representativeness of sampled runs.
+    "alpha_mean": (0.55, 0.95),
+    "alpha_std": (0.01, 0.15),
+    "wage": (0.8, 1.5),
+    "productivity": (0.8, 2.2),
+    "loan_rate": (0.01, 0.08),
+    "deposit_rate": (0.0, 0.03),
+    "bank_credit_multiplier": (4.0, 12.0),
+    "hh_debt_cap_multiplier": (2.0, 5.0),
+    "firm_debt_cap_multiplier": (1.5, 5.0),
+    "adaptation_rate": (0.2, 1.0),
+    "price_elasticity": (0.8, 3.0),
+    "skill_wage_weight": (0.0, 0.5),
+    "demand_smoothing": (0.05, 0.4),
 }
 
 
@@ -55,6 +56,12 @@ def run_model(
     )
     summary["BalanceOK_share"] = float(df["BalanceOK"].mean()) if "BalanceOK" in df else np.nan
     summary["BankFailed_share"] = float(df["BankFailed"].mean()) if "BankFailed" in df else 0.0
+    summary["BankResolved_share"] = float(df["BankResolved"].mean()) if "BankResolved" in df else 0.0
+    summary["BankResolutionHaircut_mean"] = (
+        float(df["BankResolutionHaircut"].mean()) if "BankResolutionHaircut" in df else 0.0
+    )
+    summary["BankBailedOut_share"] = float(df["BankBailedOut"].mean()) if "BankBailedOut" in df else 0.0
+    summary["BankBailoutAmount_mean"] = float(df["BankBailoutAmount"].mean()) if "BankBailoutAmount" in df else 0.0
     summary["seed"] = seed
     return summary, df
 
