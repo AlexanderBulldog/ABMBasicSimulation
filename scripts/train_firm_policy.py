@@ -47,8 +47,8 @@ def main() -> None:
     if missing:
         raise SystemExit(f"Missing columns in {data_path}: {', '.join(missing)}")
 
-    X = df[FEATURES]
-    y = df["realized_markup"].clip(0.0, 0.5)
+    X = df[FEATURES].to_numpy()
+    y = df["realized_markup"].clip(0.0, 0.5).to_numpy()
 
     model = GradientBoostingRegressor(random_state=0)
     model.fit(X, y)

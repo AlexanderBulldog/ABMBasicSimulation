@@ -138,6 +138,19 @@ class Firm(Agent):
             dtype=float,
         )
 
+    def _ml_state_dict(self, base_wage: float) -> dict[str, float]:
+        bank_credit = self.model.bank.available_credit()
+        return {
+            "inventory": float(self.inventory),
+            "last_demand": float(self.last_demand),
+            "cash": float(self.cash),
+            "debt": float(self.debt),
+            "price": float(self.price),
+            "n_workers": float(len(self.workers)),
+            "bank_available_credit": float(bank_credit),
+            "wage": float(base_wage),
+        }
+
     def target_workers(self, adapt_rate: float, base_wage: float) -> int:
         desired_output = self.last_demand
         desired_workers = int(round(desired_output / max(self.productivity, 1e-6)))
@@ -174,8 +187,20 @@ class Firm(Agent):
     def set_price(self, base_wage: float) -> None:
         unit_cost = base_wage / max(self.productivity, 1e-6)
         if self.model.use_ml_policy and self.model.firm_policy is not None:
-            state = self._ml_state(base_wage)
-            markup = float(self.model.firm_policy.predict(state.reshape(1, -1))[0])
+            state_dict = self._ml_state_dict(base_wage)
+            features = getattr(self.model.firm_policy, "feature_order_", None)
+            if features:
+                try:
+                    import pandas as pd
+                except ImportError:
+                    state = np.array([state_dict[f] for f in features], dtype=float)
+                    markup = float(self.model.firm_policy.predict(state.reshape(1, -1))[0])
+                else:
+                    frame = pd.DataFrame([[state_dict[f] for f in features]], columns=features)
+                    markup = float(self.model.firm_policy.predict(frame)[0])
+            else:
+                state = self._ml_state(base_wage)
+                markup = float(self.model.firm_policy.predict(state.reshape(1, -1))[0])
             markup = clamp(markup, 0.0, 0.5)
         else:
             inventory_signal = 0.0
