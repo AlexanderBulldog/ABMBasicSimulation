@@ -122,6 +122,22 @@ class Firm(Agent):
         self.last_revenue = 0.0
         self.defaulted = False
 
+    def _ml_state(self, base_wage: float) -> np.ndarray:
+        bank_credit = self.model.bank.available_credit()
+        return np.array(
+            [
+                self.inventory,
+                self.last_demand,
+                self.cash,
+                self.debt,
+                self.price,
+                len(self.workers),
+                bank_credit,
+                base_wage,
+            ],
+            dtype=float,
+        )
+
     def target_workers(self, adapt_rate: float, base_wage: float) -> int:
         desired_output = self.last_demand
         desired_workers = int(round(desired_output / max(self.productivity, 1e-6)))
@@ -157,12 +173,17 @@ class Firm(Agent):
 
     def set_price(self, base_wage: float) -> None:
         unit_cost = base_wage / max(self.productivity, 1e-6)
-        inventory_signal = 0.0
-        if self.inventory > self.last_demand:
-            inventory_signal = -0.05
-        elif self.inventory < 0.5 * self.last_demand:
-            inventory_signal = 0.05
-        markup = clamp(self.base_markup + inventory_signal, 0.0, 0.5)
+        if self.model.use_ml_policy and self.model.firm_policy is not None:
+            state = self._ml_state(base_wage)
+            markup = float(self.model.firm_policy.predict(state.reshape(1, -1))[0])
+            markup = clamp(markup, 0.0, 0.5)
+        else:
+            inventory_signal = 0.0
+            if self.inventory > self.last_demand:
+                inventory_signal = -0.05
+            elif self.inventory < 0.5 * self.last_demand:
+                inventory_signal = 0.05
+            markup = clamp(self.base_markup + inventory_signal, 0.0, 0.5)
         self.price = max(0.1, unit_cost * (1 + markup))
 
     def produce_and_pay(

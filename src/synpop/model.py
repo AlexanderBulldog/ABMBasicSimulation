@@ -74,6 +74,8 @@ class EconomyModel(Model):
         self.log_balance_warnings = log_balance_warnings
         self.demand_smoothing = clamp(demand_smoothing, 0.0, 1.0)
         self.demand_floor = demand_floor
+        self.use_ml_policy = False
+        self.firm_policy = None
 
         self.rng = np.random.default_rng(seed)
         controls = controls or {}
@@ -180,6 +182,12 @@ class EconomyModel(Model):
         unit_price = max(self.base_price, 1e-6)
         total_units = expected_consumption / unit_price
         return total_units / max(self.n_firms, 1)
+
+    def load_firm_policy(self, path: str) -> None:
+        import joblib
+
+        self.firm_policy = joblib.load(path)
+        self.use_ml_policy = True
 
     def _seed_initial_employment(self) -> None:
         target_jobs = int(self.initial_employment_rate * self.n_households)
