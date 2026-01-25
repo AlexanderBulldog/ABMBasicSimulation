@@ -42,6 +42,19 @@ def parse_args():
     p.add_argument("--max-defaults-hh-rate", type=float, default=0.01, help="Max DefaultsHH_rate allowed")
     p.add_argument("--max-defaults-firm-rate", type=float, default=0.01, help="Max DefaultsFirm_rate allowed")
     p.add_argument("--min-hh-deposit", type=float, default=0.05, help="Min HH_Deposit_mean for report runs")
+    p.add_argument(
+        "--balance-ok-threshold",
+        type=float,
+        default=0.95,
+        help="Minimum BalanceOK_share for full-length validation runs",
+    )
+    p.add_argument(
+        "--no-relax",
+        dest="relax_if_needed",
+        action="store_false",
+        help="Disable relaxing constraints if strict validation can't fill n points.",
+    )
+    p.set_defaults(relax_if_needed=True)
     return p.parse_args()
 
 
@@ -82,33 +95,100 @@ def objective_score(row: pd.Series) -> float:
     return score
 
 
-def pick_representative(df: pd.DataFrame, n: int, args) -> pd.DataFrame:
+def _constraints_from_args(args):
+    return {
+        "min_employment": float(args.min_employment),
+        "max_unemployment": float(args.max_unemployment),
+        "min_output": float(args.min_output),
+        "min_consumption": float(args.min_consumption),
+        "max_bank_resolved_share": float(args.max_bank_resolved_share),
+        "max_bank_bailedout_share": float(args.max_bank_bailedout_share),
+        "max_haircut_mean": float(args.max_haircut_mean),
+        "max_defaults_hh_rate": float(args.max_defaults_hh_rate),
+        "max_defaults_firm_rate": float(args.max_defaults_firm_rate),
+        "min_hh_deposit": float(args.min_hh_deposit),
+        "balance_ok_threshold": float(args.balance_ok_threshold),
+    }
+
+
+def _passes_strict(summary: Dict[str, float], args) -> bool:
+    c = _constraints_from_args(args)
+    if summary.get("BalanceOK_share", 1.0) < c["balance_ok_threshold"]:
+        return False
+    if summary.get("Employment_mean", 0.0) < c["min_employment"]:
+        return False
+    if summary.get("UnemploymentRate_mean", 1.0) > c["max_unemployment"]:
+        return False
+    if summary.get("Output_mean", 0.0) < c["min_output"]:
+        return False
+    if summary.get("Consumption_mean", 0.0) < c["min_consumption"]:
+        return False
+    if summary.get("HH_Deposit_mean", 0.0) < c["min_hh_deposit"]:
+        return False
+    if summary.get("DefaultsHH_rate", 0.0) > c["max_defaults_hh_rate"]:
+        return False
+    if summary.get("DefaultsFirm_rate", 0.0) > c["max_defaults_firm_rate"]:
+        return False
+    if summary.get("AvgPrice_mean", 0.0) <= 0.1:
+        return False
+    if summary.get("BankFailed_share", 0.0) > 0.0:
+        return False
+    if summary.get("BankResolved_share", 0.0) > c["max_bank_resolved_share"]:
+        return False
+    if summary.get("BankBailedOut_share", 0.0) > c["max_bank_bailedout_share"]:
+        return False
+    if summary.get("BankResolutionHaircut_mean", 0.0) > c["max_haircut_mean"]:
+        return False
+    return True
+
+
+def _passes_relaxed(summary: Dict[str, float], args) -> bool:
+    # Minimal viability constraints to avoid "collapse" trajectories.
+    if summary.get("BalanceOK_share", 1.0) < min(0.9, float(args.balance_ok_threshold)):
+        return False
+    if summary.get("Employment_mean", 0.0) <= 1e-9:
+        return False
+    if summary.get("Output_mean", 0.0) <= 1e-9:
+        return False
+    if summary.get("Consumption_mean", 0.0) <= 1e-9:
+        return False
+    if summary.get("AvgPrice_mean", 0.0) <= 0.1:
+        return False
+    if summary.get("BankFailed_share", 0.0) > 0.0:
+        return False
+    return True
+
+
+def _theta_from_row(row: pd.Series) -> Dict[str, float]:
+    theta: Dict[str, float] = {}
+    for p in PARAM_BOUNDS:
+        theta[p] = float(row[p])
+    return theta
+
+
+def pick_representative_candidates(df: pd.DataFrame, n: int, args) -> pd.DataFrame:
     df = df.copy()
     df["score"] = df.apply(objective_score, axis=1)
 
-    # Primary constraints for "report-ready" runs.
+    # Candidate pool based on short-run dataset, for fast pruning.
     constraints = (
-        (df["bad_run"] == False)  # noqa: E712
-        & (df.get("BankFailed_share", 0.0) <= 0.0)
-        & (df.get("BankResolved_share", 0.0) <= args.max_bank_resolved_share)
-        & (df.get("BankBailedOut_share", 0.0) <= args.max_bank_bailedout_share)
-        & (df.get("BankResolutionHaircut_mean", 0.0) <= args.max_haircut_mean)
-        & (df["Employment_mean"] >= args.min_employment)
-        & (df.get("UnemploymentRate_mean", 1.0) <= args.max_unemployment)
-        & (df.get("Output_mean", 0.0) >= args.min_output)
-        & (df.get("Consumption_mean", 0.0) >= args.min_consumption)
-        & (df.get("HH_Deposit_mean", 0.0) >= args.min_hh_deposit)
-        & (df.get("DefaultsHH_rate", 0.0) <= args.max_defaults_hh_rate)
-        & (df.get("DefaultsFirm_rate", 0.0) <= args.max_defaults_firm_rate)
-        & (df["AvgPrice_mean"] > 0.1)
+        (df.get("bad_run", False) == False)  # noqa: E712
+        & (df.get("AvgPrice_mean", 0.0) > 0.1)
+        & (df.get("Employment_mean", 0.0) > 0.0)
+        & (df.get("Output_mean", 0.0) > 0.0)
+        & (df.get("Consumption_mean", 0.0) > 0.0)
     )
     ok = df[constraints].copy()
     if ok.empty:
-        ok = df[df["bad_run"] == False].copy()  # noqa: E712
+        ok = df[df.get("bad_run", False) == False].copy()  # noqa: E712
 
-    # Ensure diversity along the most interpretable axis: employment.
+    # Diversity along employment + score (short-run).
     ok = ok.sort_values("Employment_mean")
-    bins = np.linspace(float(ok["Employment_mean"].min()), float(ok["Employment_mean"].max()) + 1e-9, num=min(n, 6) + 1)
+    bins = np.linspace(
+        float(ok["Employment_mean"].min()),
+        float(ok["Employment_mean"].max()) + 1e-9,
+        num=min(n, 6) + 1,
+    )
     chosen: List[pd.Series] = []
     used_idx = set()
     for lo, hi in zip(bins[:-1], bins[1:]):
@@ -120,23 +200,13 @@ def pick_representative(df: pd.DataFrame, n: int, args) -> pd.DataFrame:
             continue
         chosen.append(best)
         used_idx.add(best.name)
-        if len(chosen) >= n:
+        if len(chosen) >= max(n * 6, n + 12):
             break
 
-    if len(chosen) < n:
-        remainder = ok.loc[~ok.index.isin(used_idx)].sort_values("score").head(n - len(chosen))
-        chosen.extend([remainder.iloc[i] for i in range(len(remainder))])
-
-    out = pd.DataFrame(chosen)
-    out = out.sort_values(["score", "Employment_mean"]).head(n).reset_index(drop=True)
+    remainder = ok.loc[~ok.index.isin(used_idx)].sort_values("score").head(max(n * 6, n + 12) - len(chosen))
+    chosen.extend([remainder.iloc[i] for i in range(len(remainder))])
+    out = pd.DataFrame(chosen).reset_index(drop=True)
     return out
-
-
-def theta_from_row(row: pd.Series) -> Dict[str, float]:
-    theta: Dict[str, float] = {}
-    for p in PARAM_BOUNDS:
-        theta[p] = float(row[p])
-    return theta
 
 
 def main():
@@ -161,19 +231,63 @@ def main():
     if "seed" in df.columns:
         df = df.sort_values("seed").drop_duplicates(subset=list(PARAM_BOUNDS.keys()), keep="first").reset_index(drop=True)
 
-    picked = pick_representative(df, n=args.n, args=args)
+    candidates = pick_representative_candidates(df, n=args.n, args=args)
+    seeds = [int(x) for x in args.seeds.split(",") if x]
+
+    accepted_rows: List[pd.Series] = []
+    accepted_runs: List[Tuple[int, int, Dict[str, float], pd.DataFrame]] = []  # (rep_id, seed, summary, df)
+
+    strict_first = True
+    while True:
+        for _, cand in candidates.iterrows():
+            if len(accepted_rows) >= args.n:
+                break
+            theta = _theta_from_row(cand)
+            # Run full-length simulation per seed ONCE and keep the trajectories if accepted.
+            run_cache: List[Tuple[int, Dict[str, float], pd.DataFrame]] = []
+            ok = True
+            for seed in seeds:
+                summary, run_df = run_model(theta, seed=seed, steps=args.steps, window=args.window)
+                if strict_first:
+                    ok = _passes_strict(summary, args)
+                else:
+                    ok = _passes_relaxed(summary, args)
+                if not ok:
+                    break
+                run_cache.append((seed, summary, run_df))
+
+            if not ok:
+                continue
+
+            rep_id = len(accepted_rows)
+            accepted_rows.append(cand)
+            for seed, summary, run_df in run_cache:
+                accepted_runs.append((rep_id, seed, summary, run_df))
+
+        if len(accepted_rows) >= args.n:
+            break
+        if not args.relax_if_needed or not strict_first:
+            break
+        strict_first = False
+
+    if len(accepted_rows) < args.n:
+        raise SystemExit(
+            f"Could not validate enough representative points ({len(accepted_rows)}/{args.n}). "
+            "Try lowering thresholds (e.g., --min-employment/--min-output) or use --relax-if-needed."
+        )
+
+    picked = pd.DataFrame(accepted_rows).reset_index(drop=True)
+    picked["validated_steps"] = int(args.steps)
+    picked["validated_seeds"] = ",".join([str(s) for s in seeds])
     points_path = outdir / "representative_points.csv"
     picked.to_csv(points_path, index=False)
 
-    seeds = [int(x) for x in args.seeds.split(",") if x]
     summaries: List[Dict[str, float]] = []
-    for i in range(len(picked)):
-        theta = theta_from_row(picked.iloc[i])
-        for seed in seeds:
-            summary, run_df = run_model(theta, seed=seed, steps=args.steps, window=args.window)
-            row = {**theta, **summary, "rep_id": i, "seed": seed}
-            summaries.append(row)
-            run_df.to_csv(outdir / f"rep_run_{i:02d}_seed{seed}.csv", index=True)
+    for rep_id, seed, summary, run_df in accepted_runs:
+        theta = {k: float(picked.loc[rep_id, k]) for k in PARAM_BOUNDS.keys()}
+        row = {**theta, **summary, "rep_id": rep_id, "seed": seed}
+        summaries.append(row)
+        run_df.to_csv(outdir / f"rep_run_{rep_id:02d}_seed{seed}.csv", index=True)
 
     summary_path = outdir / "representative_summary.csv"
     pd.DataFrame(summaries).to_csv(summary_path, index=False)

@@ -19,20 +19,22 @@ DEFAULT_STEPS = 150
 DEFAULT_WINDOW = 30
 
 PARAM_BOUNDS: Dict[str, Tuple[float, float]] = {
-    # Narrowed to reduce collapse/insolvency regimes and improve representativeness of sampled runs.
-    "alpha_mean": (0.55, 0.95),
-    "alpha_std": (0.01, 0.15),
-    "wage": (0.8, 1.5),
-    "productivity": (0.8, 2.2),
-    "loan_rate": (0.01, 0.08),
-    "deposit_rate": (0.0, 0.03),
-    "bank_credit_multiplier": (4.0, 12.0),
-    "hh_debt_cap_multiplier": (2.0, 5.0),
-    "firm_debt_cap_multiplier": (1.5, 5.0),
-    "adaptation_rate": (0.2, 1.0),
-    "price_elasticity": (0.8, 3.0),
-    "skill_wage_weight": (0.0, 0.5),
-    "demand_smoothing": (0.05, 0.4),
+    # Tuned to reduce collapse/insolvency regimes and improve representativeness of sampled runs.
+    # These bounds are intentionally "safer" than the wide defaults, to make calibration/reporting
+    # runs more stable (seminar/paper demo).
+    "alpha_mean": (0.57, 0.92),
+    "alpha_std": (0.03, 0.13),
+    "wage": (0.9, 1.45),
+    "productivity": (0.95, 1.95),
+    "loan_rate": (0.012, 0.073),
+    "deposit_rate": (0.001, 0.028),
+    "bank_credit_multiplier": (4.2, 11.5),
+    "hh_debt_cap_multiplier": (2.1, 4.8),
+    "firm_debt_cap_multiplier": (1.6, 4.8),
+    "adaptation_rate": (0.25, 0.95),
+    "price_elasticity": (0.95, 2.9),
+    "skill_wage_weight": (0.03, 0.49),
+    "demand_smoothing": (0.06, 0.35),
 }
 
 
@@ -80,6 +82,9 @@ def run_batch(
     steps: int = DEFAULT_STEPS,
     window: int = DEFAULT_WINDOW,
     balance_ok_threshold: float = 0.5,
+    employment_floor: float = 1e-9,
+    output_floor: float = 1e-9,
+    price_floor: float = 0.1,
 ) -> pd.DataFrame:
     """Run multiple parameter sets and seeds; return aggregated rows."""
     rows: List[Dict[str, float]] = []
@@ -89,7 +94,26 @@ def run_batch(
             try:
                 summary, df = run_model(theta, seed=seed, steps=steps, window=window)
                 row.update(summary)
-                bad = _has_bad_values(df) or (summary.get("BalanceOK_share", 1.0) < balance_ok_threshold)
+                employment = float(summary.get("Employment_mean", np.inf))
+                output = float(summary.get("Output_mean", np.inf))
+                price = float(summary.get("AvgPrice_mean", np.inf))
+                bank_equity = float(summary.get("Bank_Equity_mean", 0.0))
+
+                pathological = (
+                    (not np.isfinite(employment))
+                    or (not np.isfinite(output))
+                    or (not np.isfinite(price))
+                    or (employment <= employment_floor)
+                    or (output <= output_floor)
+                    or (price <= price_floor)
+                    or (not np.isfinite(bank_equity))
+                )
+
+                bad = (
+                    _has_bad_values(df)
+                    or pathological
+                    or (summary.get("BalanceOK_share", 1.0) < balance_ok_threshold)
+                )
                 row["bad_run"] = bool(bad)
                 row["error"] = ""
             except Exception as exc:  # pragma: no cover - guardrail for batch runs
