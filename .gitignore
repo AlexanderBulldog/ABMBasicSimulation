@@ -1,3 +1,13 @@
-.venv
+﻿.venv
 .env
 scripts/__pycache__
+# Simulation outputs / artifacts
+output/
+output_seminar/
+output_backup/
+output_*
+attic/
+# Python caches
+__pycache__/
+*.pyc
+
