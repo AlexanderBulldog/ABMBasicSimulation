@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 import sys
 
 import numpy as np
@@ -184,11 +184,19 @@ def parse_reductions(raw: str) -> List[float]:
         raise ValueError("At least one reduction must be provided")
     return vals
 
-def load_targets(path: Path) -> Dict[str, TargetSpec]:
+
+def load_targets(path: Path) -> Tuple[Dict[str, Any], Dict[str, TargetSpec]]:
     with open(path, "r", encoding="utf-8-sig") as f:
         cfg = json.load(f)
+    meta = cfg.get("_meta", {}) if isinstance(cfg, dict) else {}
+    if not isinstance(meta, dict):
+        meta = {}
     out: Dict[str, TargetSpec] = {}
     for metric, v in cfg.items():
+        if not isinstance(metric, str) or metric.startswith("_"):
+            continue
+        if not isinstance(v, dict):
+            continue
         target = v.get("target")
         if target is None and "low" in v and "high" in v:
             target = 0.5 * (v["low"] + v["high"])
@@ -209,7 +217,68 @@ def load_targets(path: Path) -> Dict[str, TargetSpec]:
             sigma_ev_quantile=sigma_ev_q_f,
             enabled_for_sa=enabled_for_sa,
         )
-    return out
+    return meta, out
+
+
+def calibrate_targets_wave1_empirical(
+    df: pd.DataFrame,
+    targets: Dict[str, TargetSpec],
+    param_cols: List[str],
+) -> Tuple[Dict[str, TargetSpec], pd.DataFrame]:
+    calibrated: Dict[str, TargetSpec] = {}
+    rows: List[Dict[str, object]] = []
+    for metric, t in targets.items():
+        sigma_model_new = float(t.sigma_model)
+        residual_groups = 0
+        residual_median = np.nan
+        residual_q75 = np.nan
+        source = "fixed_baseline"
+        notes = ""
+
+        if metric in df.columns and t.target is not None:
+            grouped = (
+                df.groupby(param_cols, dropna=False, sort=False)[metric]
+                .agg(["count", "mean"])
+                .reset_index(drop=True)
+            )
+            grouped = grouped[(grouped["count"] >= 2) & np.isfinite(grouped["mean"])]
+            residual_groups = int(grouped.shape[0])
+            if residual_groups > 0:
+                resid = np.abs(grouped["mean"].to_numpy(dtype=float) - float(t.target))
+                residual_median = float(np.median(resid))
+                residual_q75 = float(np.quantile(resid, 0.75))
+                # Empirical discrepancy proxy: robust absolute gap between replicate-mean model outputs and targets.
+                sigma_model_new = max(1e-9, residual_median)
+                source = "wave1_empirical_residual_median"
+            else:
+                notes = "insufficient_replicates_for_residuals"
+        else:
+            notes = "metric_missing_or_target_missing"
+
+        calibrated[metric] = TargetSpec(
+            target=t.target,
+            sigma_obs=t.sigma_obs,
+            sigma_model=sigma_model_new,
+            sigma_ev=t.sigma_ev,
+            sigma_ev_quantile=t.sigma_ev_quantile,
+            enabled_for_sa=t.enabled_for_sa,
+        )
+        rows.append(
+            {
+                "metric": metric,
+                "target": t.target,
+                "sigma_obs": t.sigma_obs,
+                "sigma_model_base": t.sigma_model,
+                "sigma_model_calibrated": sigma_model_new,
+                "sigma_model_delta": sigma_model_new - float(t.sigma_model),
+                "sigma_model_source": source,
+                "residual_groups": residual_groups,
+                "residual_median_abs": residual_median,
+                "residual_q75_abs": residual_q75,
+                "notes": notes,
+            }
+        )
+    return calibrated, pd.DataFrame(rows)
 
 
 def estimate_ev_from_seed_replicates(
@@ -587,6 +656,25 @@ def parse_args():
     )
     parser.add_argument("--ev-default-quantile", type=float, default=0.9)
     parser.add_argument(
+        "--sigma-calibration-mode",
+        type=str,
+        choices=["fixed", "wave1_empirical"],
+        default="fixed",
+        help="How to set sigma_model in targets before HM.",
+    )
+    parser.add_argument(
+        "--sigma-calibration-summary",
+        type=str,
+        default="",
+        help="Optional path for sigma calibration table (CSV).",
+    )
+    parser.add_argument(
+        "--calibrated-targets-out",
+        type=str,
+        default="",
+        help="Optional path to save calibrated targets JSON used by HM.",
+    )
+    parser.add_argument(
         "--save-uncertainty-breakdown",
         dest="save_uncertainty_breakdown",
         action="store_true",
@@ -705,7 +793,57 @@ def main():
     print(f"Saved emulator scores to {scores_path}")
 
     if args.targets:
-        targets = load_targets(Path(args.targets))
+        targets_meta, targets = load_targets(Path(args.targets))
+        sigma_calib_df = pd.DataFrame()
+        if args.sigma_calibration_mode == "wave1_empirical":
+            targets, sigma_calib_df = calibrate_targets_wave1_empirical(df, targets, param_cols)
+        else:
+            sigma_calib_df = pd.DataFrame(
+                [
+                    {
+                        "metric": m,
+                        "target": t.target,
+                        "sigma_obs": t.sigma_obs,
+                        "sigma_model_base": t.sigma_model,
+                        "sigma_model_calibrated": t.sigma_model,
+                        "sigma_model_delta": 0.0,
+                        "sigma_model_source": "fixed_baseline",
+                        "residual_groups": 0,
+                        "residual_median_abs": np.nan,
+                        "residual_q75_abs": np.nan,
+                        "notes": "",
+                    }
+                    for m, t in targets.items()
+                ]
+            )
+
+        sigma_calib_path = Path(args.sigma_calibration_summary) if args.sigma_calibration_summary else outdir / "sigma_calibration_summary.csv"
+        sigma_calib_path.parent.mkdir(parents=True, exist_ok=True)
+        sigma_calib_df.to_csv(sigma_calib_path, index=False)
+        print(f"Saved sigma calibration summary to {sigma_calib_path}")
+
+        calibrated_targets_path = Path(args.calibrated_targets_out) if args.calibrated_targets_out else outdir / "targets_calibrated.json"
+        calibrated_targets_path.parent.mkdir(parents=True, exist_ok=True)
+        calibrated_payload: Dict[str, object] = {
+            "_meta": {
+                **targets_meta,
+                "estimation_method": args.sigma_calibration_mode,
+                "estimation_sample": str(data_path),
+                "version_tag": str(targets_meta.get("version_tag", "v1")),
+            }
+        }
+        for metric, t in targets.items():
+            calibrated_payload[metric] = {
+                "target": t.target,
+                "sigma_obs": t.sigma_obs,
+                "sigma_model": t.sigma_model,
+                "sigma_ev": t.sigma_ev,
+                "sigma_ev_quantile": t.sigma_ev_quantile,
+                "enabled_for_sa": t.enabled_for_sa,
+            }
+        calibrated_targets_path.write_text(json.dumps(calibrated_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"Saved calibrated targets to {calibrated_targets_path}")
+
         uncertainty_specs, uncertainty_df = build_uncertainty_specs(
             df=df,
             targets=targets,

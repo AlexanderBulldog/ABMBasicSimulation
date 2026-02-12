@@ -1,0 +1,5 @@
+component,share_at_max_reduction,share_mean,rank_at_max_reduction,rank_by_mean
+CU,0.0,0.0,2,2
+EV,0.0,0.0,2,2
+MD,0.2,0.1333333333333333,1,1
+OU,0.0,0.0,2,2

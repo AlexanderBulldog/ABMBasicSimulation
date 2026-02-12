@@ -35,7 +35,7 @@ def parse_args():
     p.add_argument("--min-employment", type=float, default=45.0, help="Min Employment_mean for report runs")
     p.add_argument("--max-unemployment", type=float, default=0.55, help="Max UnemploymentRate_mean for report runs")
     p.add_argument("--min-output", type=float, default=50.0, help="Min Output_mean for report runs")
-    p.add_argument("--min-consumption", type=float, default=45.0, help="Min Consumption_mean for report runs")
+    p.add_argument("--min-consumption", type=float, default=50.0, help="Min Consumption_mean for report runs")
     p.add_argument("--max-bank-resolved-share", type=float, default=0.08, help="Max BankResolved_share allowed")
     p.add_argument("--max-bank-bailedout-share", type=float, default=0.02, help="Max BankBailedOut_share allowed")
     p.add_argument("--max-haircut-mean", type=float, default=0.03, help="Max BankResolutionHaircut_mean allowed")
@@ -112,51 +112,61 @@ def _constraints_from_args(args):
 
 
 def _passes_strict(summary: Dict[str, float], args) -> bool:
+    return len(_strict_fail_reasons(summary, args)) == 0
+
+
+def _strict_fail_reasons(summary: Dict[str, float], args) -> List[str]:
     c = _constraints_from_args(args)
+    reasons: List[str] = []
     if summary.get("BalanceOK_share", 1.0) < c["balance_ok_threshold"]:
-        return False
+        reasons.append("balance_ok_below_threshold")
     if summary.get("Employment_mean", 0.0) < c["min_employment"]:
-        return False
+        reasons.append("employment_below_min")
     if summary.get("UnemploymentRate_mean", 1.0) > c["max_unemployment"]:
-        return False
+        reasons.append("unemployment_above_max")
     if summary.get("Output_mean", 0.0) < c["min_output"]:
-        return False
+        reasons.append("output_below_min")
     if summary.get("Consumption_mean", 0.0) < c["min_consumption"]:
-        return False
+        reasons.append("consumption_below_min")
     if summary.get("HH_Deposit_mean", 0.0) < c["min_hh_deposit"]:
-        return False
+        reasons.append("hh_deposit_below_min")
     if summary.get("DefaultsHH_rate", 0.0) > c["max_defaults_hh_rate"]:
-        return False
+        reasons.append("defaults_hh_above_max")
     if summary.get("DefaultsFirm_rate", 0.0) > c["max_defaults_firm_rate"]:
-        return False
+        reasons.append("defaults_firm_above_max")
     if summary.get("AvgPrice_mean", 0.0) <= 0.1:
-        return False
+        reasons.append("price_too_low")
     if summary.get("BankFailed_share", 0.0) > 0.0:
-        return False
+        reasons.append("bank_failed_positive")
     if summary.get("BankResolved_share", 0.0) > c["max_bank_resolved_share"]:
-        return False
+        reasons.append("bank_resolved_above_max")
     if summary.get("BankBailedOut_share", 0.0) > c["max_bank_bailedout_share"]:
-        return False
+        reasons.append("bank_bailedout_above_max")
     if summary.get("BankResolutionHaircut_mean", 0.0) > c["max_haircut_mean"]:
-        return False
-    return True
+        reasons.append("haircut_above_max")
+    return reasons
 
 
 def _passes_relaxed(summary: Dict[str, float], args) -> bool:
+    return len(_relaxed_fail_reasons(summary, args)) == 0
+
+
+def _relaxed_fail_reasons(summary: Dict[str, float], args) -> List[str]:
     # Minimal viability constraints to avoid "collapse" trajectories.
+    reasons: List[str] = []
     if summary.get("BalanceOK_share", 1.0) < min(0.9, float(args.balance_ok_threshold)):
-        return False
+        reasons.append("balance_ok_below_relaxed_threshold")
     if summary.get("Employment_mean", 0.0) <= 1e-9:
-        return False
+        reasons.append("employment_nonpositive")
     if summary.get("Output_mean", 0.0) <= 1e-9:
-        return False
+        reasons.append("output_nonpositive")
     if summary.get("Consumption_mean", 0.0) <= 1e-9:
-        return False
+        reasons.append("consumption_nonpositive")
     if summary.get("AvgPrice_mean", 0.0) <= 0.1:
-        return False
+        reasons.append("price_too_low")
     if summary.get("BankFailed_share", 0.0) > 0.0:
-        return False
-    return True
+        reasons.append("bank_failed_positive")
+    return reasons
 
 
 def _theta_from_row(row: pd.Series) -> Dict[str, float]:
@@ -222,7 +232,7 @@ def main():
         keep_cols = list(dict.fromkeys(key_cols + ["nroy", "I_max"]))
         hm = hm[keep_cols]
         df = df.merge(hm, on=key_cols, how="left")
-        df["nroy"] = df["nroy"].fillna(False)
+        df["nroy"] = df["nroy"].fillna(False).astype(bool)
         df = df[df["nroy"] == True].copy()  # noqa: E712
         if df.empty:
             raise SystemExit("No NROY rows after merge; check history_matching file and bounds.")
@@ -236,6 +246,7 @@ def main():
 
     accepted_rows: List[pd.Series] = []
     accepted_runs: List[Tuple[int, int, Dict[str, float], pd.DataFrame]] = []  # (rep_id, seed, summary, df)
+    rejection_rows: List[Dict[str, object]] = []
 
     strict_first = True
     while True:
@@ -249,10 +260,19 @@ def main():
             for seed in seeds:
                 summary, run_df = run_model(theta, seed=seed, steps=args.steps, window=args.window)
                 if strict_first:
-                    ok = _passes_strict(summary, args)
+                    reasons = _strict_fail_reasons(summary, args)
                 else:
-                    ok = _passes_relaxed(summary, args)
+                    reasons = _relaxed_fail_reasons(summary, args)
+                ok = len(reasons) == 0
                 if not ok:
+                    rejection_rows.append(
+                        {
+                            "stage": "strict" if strict_first else "relaxed",
+                            "seed": seed,
+                            "reasons": ";".join(reasons),
+                            **{p: float(theta[p]) for p in PARAM_BOUNDS},
+                        }
+                    )
                     break
                 run_cache.append((seed, summary, run_df))
 
@@ -271,9 +291,11 @@ def main():
         strict_first = False
 
     if len(accepted_rows) < args.n:
+        if rejection_rows:
+            pd.DataFrame(rejection_rows).to_csv(outdir / "representative_rejections.csv", index=False)
         raise SystemExit(
             f"Could not validate enough representative points ({len(accepted_rows)}/{args.n}). "
-            "Try lowering thresholds (e.g., --min-employment/--min-output) or use --relax-if-needed."
+            "Try lowering thresholds (e.g., --min-employment/--min-output) or allow relaxed fallback (default, disable via --no-relax)."
         )
 
     picked = pd.DataFrame(accepted_rows).reset_index(drop=True)
@@ -291,6 +313,8 @@ def main():
 
     summary_path = outdir / "representative_summary.csv"
     pd.DataFrame(summaries).to_csv(summary_path, index=False)
+    if rejection_rows:
+        pd.DataFrame(rejection_rows).to_csv(outdir / "representative_rejections.csv", index=False)
     print(f"Saved points to {points_path}")
     print(f"Saved run summaries to {summary_path}")
 

@@ -1,0 +1,3 @@
+iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
+0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_dry\01_wave1\targets_calibrated.json,48.0,100.0,1.765345275783321,2.8739831675516476
+1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_dry\02_wave2\targets_tuned_iter1.json,48.0,93.75,1.9403030222450275,3.1459651864090348

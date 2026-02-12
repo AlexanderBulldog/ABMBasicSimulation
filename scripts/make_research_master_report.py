@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -76,6 +76,7 @@ def _gate_eval(
     rep_summary: pd.DataFrame,
     sa_df: pd.DataFrame,
     gate_cfg: Dict[str, float],
+    confirm_stats: Dict[str, float] | None = None,
 ) -> pd.DataFrame:
     hm = _hm_stats(wave2_hm)
     nroy_pct = hm["nroy_pct"]
@@ -86,18 +87,45 @@ def _gate_eval(
     has_rank = ("rank_at_max_reduction" in sa_df.columns) and ("rank_by_mean" in sa_df.columns)
     has_16 = len(sa_df) >= 16
 
-    checks = [
-        ("NROY wave2 in [25,60]%", bool(np.isfinite(nroy_pct) and gate_cfg["nroy_wave2_min_pct"] <= nroy_pct <= gate_cfg["nroy_wave2_max_pct"]), f"{nroy_pct:.2f}%"),
+    checks: List[Tuple[str, bool, str]] = [
+        (
+            f"NROY wave2 in [{gate_cfg['nroy_wave2_min_pct']:.0f},{gate_cfg['nroy_wave2_max_pct']:.0f}]%",
+            bool(np.isfinite(nroy_pct) and gate_cfg["nroy_wave2_min_pct"] <= nroy_pct <= gate_cfg["nroy_wave2_max_pct"]),
+            f"{nroy_pct:.2f}%",
+        ),
         ("I_max median wave2 < 3.2", bool(np.isfinite(i_med) and i_med < gate_cfg["imax_wave2_median_max"]), f"{i_med:.4f}"),
-        ("Representative Employment_mean > 0", bool(np.isfinite(rep["Employment_min"]) and rep["Employment_min"] > 0), f"min={rep['Employment_min']:.4f}"),
-        ("Representative Output_mean > 0", bool(np.isfinite(rep["Output_min"]) and rep["Output_min"] > 0), f"min={rep['Output_min']:.4f}"),
-        ("Representative Consumption_mean > 0", bool(np.isfinite(rep["Consumption_min"]) and rep["Consumption_min"] > 0), f"min={rep['Consumption_min']:.4f}"),
+        (
+            f"Representative Employment_mean >= {gate_cfg['rep_employment_min']:.0f}",
+            bool(np.isfinite(rep["Employment_min"]) and rep["Employment_min"] >= gate_cfg["rep_employment_min"]),
+            f"min={rep['Employment_min']:.4f}",
+        ),
+        (
+            f"Representative Output_mean >= {gate_cfg['rep_output_min']:.0f}",
+            bool(np.isfinite(rep["Output_min"]) and rep["Output_min"] >= gate_cfg["rep_output_min"]),
+            f"min={rep['Output_min']:.4f}",
+        ),
+        (
+            f"Representative Consumption_mean >= {gate_cfg['rep_consumption_min']:.0f}",
+            bool(np.isfinite(rep["Consumption_min"]) and rep["Consumption_min"] >= gate_cfg["rep_consumption_min"]),
+            f"min={rep['Consumption_min']:.4f}",
+        ),
         ("Representative BankFailed_share == 0", bool(np.isfinite(rep["BankFailed_max"]) and rep["BankFailed_max"] == 0.0), f"max={rep['BankFailed_max']:.6f}"),
         ("Representative BalanceOK_share == 1", bool(np.isfinite(rep["BalanceOK_min"]) and rep["BalanceOK_min"] == 1.0), f"min={rep['BalanceOK_min']:.6f}"),
         ("SA components EV/OU/MD/CU present", components == {"EV", "OU", "MD", "CU"}, f"components={sorted(list(components))}"),
         ("SA has >=16 rows", has_16, f"rows={len(sa_df)}"),
         ("SA ranks present", has_rank, f"rank_cols={has_rank}"),
     ]
+    if confirm_stats is not None:
+        tol = float(gate_cfg.get("confirmatory_nroy_tol_pp", 5.0))
+        nroy_delta = float(confirm_stats.get("nroy_delta_pp", np.nan))
+        top2_stable = bool(confirm_stats.get("sa_top2_stable", False))
+        checks.append(
+            (
+                f"Confirmatory stability (|NROY delta| <= {tol:.1f}pp and SA top2 stable)",
+                bool(np.isfinite(nroy_delta) and abs(nroy_delta) <= tol and top2_stable),
+                f"nroy_delta_pp={nroy_delta:.2f}; sa_top2_stable={top2_stable}",
+            )
+        )
     out = pd.DataFrame(checks, columns=["check", "pass", "value"])
     out["pass"] = out["pass"].astype(bool)
     return out
@@ -115,6 +143,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--run-config", type=str, default="")
     p.add_argument("--out", type=str, default="output_research_core/04_master/research_core_report.md")
     p.add_argument("--tables-dir", type=str, default="output_research_core/04_master/research_core_tables")
+    p.add_argument("--confirmatory-summary", type=str, default="")
     return p.parse_args()
 
 
@@ -146,6 +175,9 @@ def main() -> None:
     wave2_sa = pd.read_csv(wave2_dir / "sensitivity_uncertainty.csv")
     rep_summary = pd.read_csv(rep_dir / "representative_summary.csv")
     rep_points = pd.read_csv(rep_dir / "representative_points.csv")
+    confirm_stats = None
+    if args.confirmatory_summary and Path(args.confirmatory_summary).exists():
+        confirm_stats = json.loads(Path(args.confirmatory_summary).read_text(encoding="utf-8"))
 
     emu_tbl = pd.DataFrame(
         [
@@ -192,8 +224,19 @@ def main() -> None:
     sa_rank_tbl = wave2_sa[["component", "share_at_max_reduction", "share_mean", "rank_at_max_reduction", "rank_by_mean"]].drop_duplicates()
     rep_tbl = pd.DataFrame([_rep_stats(rep_summary)])
 
-    gate_cfg = run_cfg.get("quality_gate", {"nroy_wave2_min_pct": 25.0, "nroy_wave2_max_pct": 60.0, "imax_wave2_median_max": 3.2})
-    gate_tbl = _gate_eval(wave2_hm, rep_summary, wave2_sa, gate_cfg)
+    gate_cfg = run_cfg.get(
+        "quality_gate",
+        {
+            "nroy_wave2_min_pct": 25.0,
+            "nroy_wave2_max_pct": 60.0,
+            "imax_wave2_median_max": 3.2,
+            "rep_employment_min": 45.0,
+            "rep_output_min": 50.0,
+            "rep_consumption_min": 50.0,
+            "confirmatory_nroy_tol_pp": 5.0,
+        },
+    )
+    gate_tbl = _gate_eval(wave2_hm, rep_summary, wave2_sa, gate_cfg, confirm_stats=confirm_stats)
     all_pass = bool(gate_tbl["pass"].all())
 
     emu_tbl.to_csv(tables_dir / "emulator_quality.csv", index=False)
@@ -259,6 +302,12 @@ def main() -> None:
     for _, row in gate_tbl.iterrows():
         lines.append(f"| {row['check']} | {'PASS' if bool(row['pass']) else 'FAIL'} | {row['value']} |\n")
     lines.append("\n")
+    if confirm_stats is not None:
+        lines.append("## Confirmatory Stability\n")
+        lines.append(f"- confirmatory_nroy_pct: `{_fmt(float(confirm_stats.get('confirm_nroy_pct', np.nan)),2)}`\n")
+        lines.append(f"- main_nroy_pct: `{_fmt(float(confirm_stats.get('main_nroy_pct', np.nan)),2)}`\n")
+        lines.append(f"- nroy_delta_pp: `{_fmt(float(confirm_stats.get('nroy_delta_pp', np.nan)),2)}`\n")
+        lines.append(f"- SA top2 stable: `{bool(confirm_stats.get('sa_top2_stable', False))}`\n\n")
     if not all_pass:
         lines.append("### Failure Reasons & Corrective Actions\n")
         failed = gate_tbl[~gate_tbl["pass"]]
