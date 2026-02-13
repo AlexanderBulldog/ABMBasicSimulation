@@ -1,0 +1,12 @@
+check,pass,value
+"NROY wave2 in [25,60]%",False,98.75%
+I_max median wave2 < 3.2,True,1.8382
+Representative Employment_mean >= 45,True,min=93.2667
+Representative Output_mean >= 50,True,min=100.9099
+Representative Consumption_mean >= 50,True,min=94.1543
+Representative BankFailed_share == 0,True,max=0.000000
+Representative BalanceOK_share == 1,True,min=1.000000
+SA components EV/OU/MD/CU present,True,"components=['CU', 'EV', 'MD', 'OU']"
+SA has >=16 rows,True,rows=16
+SA ranks present,True,rank_cols=True
+Confirmatory stability (|NROY delta| <= 5.0pp and SA top2 stable),True,nroy_delta_pp=-1.83; sa_top2_stable=True

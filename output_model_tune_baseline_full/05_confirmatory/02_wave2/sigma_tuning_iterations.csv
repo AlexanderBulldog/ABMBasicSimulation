@@ -1,0 +1,5 @@
+iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
+0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\05_confirmatory\01_wave1\targets_calibrated.json,930.0,97.41935483870968,1.379425115502762,2.6068792816235797
+1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\05_confirmatory\02_wave2\targets_tuned_iter1.json,930.0,96.23655913978494,1.4810146381626277,2.731634558008855
+2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\05_confirmatory\02_wave2\targets_tuned_iter2.json,930.0,95.59139784946237,1.5813192079575196,2.846970150479302
+3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\05_confirmatory\02_wave2\targets_tuned_iter3.json,930.0,95.59139784946237,1.6757383874422738,2.951923034297357

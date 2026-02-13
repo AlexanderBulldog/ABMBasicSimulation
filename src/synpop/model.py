@@ -48,6 +48,30 @@ class EconomyModel(Model):
         log_balance_warnings: bool = True,
         demand_smoothing: float = 0.1,
         demand_floor: Optional[float] = None,
+        # Iteration 1: pricing block.
+        price_adjust_speed: float = 0.2,
+        price_stickiness: float = 0.65,
+        max_price_step: float = 0.12,
+        inventory_target_days: float = 1.5,
+        markup_inventory_sensitivity: float = 0.15,
+        markup_margin_sensitivity: float = 0.25,
+        markup_credit_sensitivity: float = 0.05,
+        # Iteration 2: labor and expectations.
+        demand_expectation_memory: float = 0.35,
+        max_hire_per_step: int = 8,
+        max_fire_per_step: int = 8,
+        # Iteration 3: underwriting and resolution.
+        hh_max_dsr: float = 0.35,
+        firm_max_dsr: float = 1.2,
+        firm_reentry_lag: int = 2,
+        firm_reentry_cash_fraction: float = 0.5,
+        # Iteration 4: household smoothing.
+        consumption_memory: float = 0.35,
+        precautionary_saving: float = 0.1,
+        consumption_floor_prop: float = 0.0,
+        consumption_ceiling_prop: float = 2.0,
+        unemployed_consumption_penalty: float = 0.2,
+        unemployment_transfer: float = 0.0,
     ) -> None:
         super().__init__(seed=seed)
         self.n_households = n_households
@@ -76,6 +100,30 @@ class EconomyModel(Model):
         self.demand_floor = demand_floor
         self.use_ml_policy = False
         self.firm_policy = None
+
+        self.price_adjust_speed = clamp(price_adjust_speed, 0.0, 1.0)
+        self.price_stickiness = clamp(price_stickiness, 0.0, 0.99)
+        self.max_price_step = clamp(max_price_step, 0.001, 0.8)
+        self.inventory_target_days = clamp(inventory_target_days, 0.2, 6.0)
+        self.markup_inventory_sensitivity = max(0.0, float(markup_inventory_sensitivity))
+        self.markup_margin_sensitivity = max(0.0, float(markup_margin_sensitivity))
+        self.markup_credit_sensitivity = max(0.0, float(markup_credit_sensitivity))
+
+        self.demand_expectation_memory = clamp(demand_expectation_memory, 0.0, 1.0)
+        self.max_hire_per_step = max(1, int(max_hire_per_step))
+        self.max_fire_per_step = max(1, int(max_fire_per_step))
+
+        self.hh_max_dsr = clamp(hh_max_dsr, 0.01, 1.5)
+        self.firm_max_dsr = clamp(firm_max_dsr, 0.05, 5.0)
+        self.firm_reentry_lag = max(0, int(firm_reentry_lag))
+        self.firm_reentry_cash_fraction = clamp(firm_reentry_cash_fraction, 0.0, 1.0)
+
+        self.consumption_memory = clamp(consumption_memory, 0.0, 1.0)
+        self.precautionary_saving = clamp(precautionary_saving, 0.0, 0.9)
+        self.consumption_floor_prop = clamp(consumption_floor_prop, 0.0, 1.0)
+        self.consumption_ceiling_prop = clamp(consumption_ceiling_prop, 0.2, 4.0)
+        self.unemployed_consumption_penalty = clamp(unemployed_consumption_penalty, 0.0, 0.8)
+        self.unemployment_transfer = max(0.0, float(unemployment_transfer))
 
         self.rng = np.random.default_rng(seed)
         controls = controls or {}
@@ -126,6 +174,7 @@ class EconomyModel(Model):
                 market_share=spec.get("market_share"),
             )
             f.last_demand = spec.get("expected_demand") or self.initial_demand_share()
+            f.expected_sales_ewma = max(1e-6, f.last_demand)
             self.firms.append(f)
 
         self._seed_initial_employment()
@@ -136,17 +185,25 @@ class EconomyModel(Model):
                 "UnemploymentRate": lambda m: 1
                 - (sum(1 for h in m.households if h.employed) / max(m.n_households, 1)),
                 "WageBill": lambda m: m._last_wage_bill,
-                # Output = goods sold (demand-bound), Production = goods produced (supply-bound)
                 "Output": lambda m: m._last_output,
                 "Production": lambda m: m._last_production,
                 "Consumption": lambda m: m._last_consumption,
                 "Transfers": lambda m: m._last_transfers,
+                "UnemploymentTransfers": lambda m: m._last_unemployment_transfers,
                 "HH_Deposit": lambda m: sum(h.deposit for h in m.households),
                 "HH_Debt": lambda m: sum(h.debt for h in m.households),
                 "Firm_Debt": lambda m: sum(f.debt for f in m.firms),
                 "Firm_Cash": lambda m: sum(f.cash for f in m.firms),
                 "Inventories": lambda m: sum(f.inventory for f in m.firms),
                 "AvgPrice": lambda m: np.mean([f.price for f in m.firms]) if m.firms else 0,
+                "AvgMarkup": lambda m: m._last_avg_markup,
+                "PriceDispersion": lambda m: m._last_price_dispersion,
+                "InventoryGap": lambda m: m._last_inventory_gap,
+                "SalesForecastError": lambda m: m._last_sales_forecast_error,
+                "InventoryTurnover": lambda m: m._last_inventory_turnover,
+                "CreditRejections": lambda m: m._last_credit_rejections,
+                "FirmDowntimeShare": lambda m: m._last_firm_downtime_share,
+                "ReentryCount": lambda m: m._last_reentry_count,
                 "Bank_Equity": lambda m: m.bank.state.equity,
                 "Bank_Loans": lambda m: m.bank.state.loans_firms + m.bank.state.loans_hh,
                 "Bank_Deposits": lambda m: m.bank.state.deposits_firms + m.bank.state.deposits_hh,
@@ -168,14 +225,22 @@ class EconomyModel(Model):
         self._last_consumption = 0.0
         self._last_wage_bill = 0.0
         self._last_transfers = 0.0
+        self._last_unemployment_transfers = 0.0
         self._last_defaults = 0
         self._last_defaults_hh = 0
         self._last_defaults_firm = 0
         self._last_balance_ok = True
+        self._last_avg_markup = 0.0
+        self._last_price_dispersion = 0.0
+        self._last_inventory_gap = 0.0
+        self._last_sales_forecast_error = 0.0
+        self._last_inventory_turnover = 0.0
+        self._last_credit_rejections = 0.0
+        self._last_firm_downtime_share = 0.0
+        self._last_reentry_count = 0.0
         self._demand_floor_value = self.demand_floor if self.demand_floor is not None else 0.0
 
     def initial_demand_share(self) -> float:
-        """Initial per-firm expected demand in *units* (not currency)."""
         employment_rate = clamp(self.initial_employment_rate, 0.0, 1.0)
         expected_wage_bill = (self.n_households * employment_rate) * self.wage
         expected_consumption = expected_wage_bill * clamp(self._avg_alpha, 0.0, 1.0)
@@ -191,9 +256,7 @@ class EconomyModel(Model):
 
     def _seed_initial_employment(self) -> None:
         target_jobs = int(self.initial_employment_rate * self.n_households)
-        eligible = [
-            h for h in self.households if (h.reserve_wage is None or self.wage >= h.reserve_wage)
-        ]
+        eligible = [h for h in self.households if (h.reserve_wage is None or self.wage >= h.reserve_wage)]
         job_pool = self.random.sample(eligible, min(target_jobs, len(eligible)))
         per_firm = max(1, target_jobs // max(self.n_firms, 1)) if target_jobs > 0 else 0
 
@@ -206,6 +269,7 @@ class EconomyModel(Model):
             f.workers = [h.unique_id for h in hires]
 
     def step(self) -> None:
+        self.bank.begin_step()
         for h in self.households:
             h.begin_step()
         for f in self.firms:
@@ -218,6 +282,11 @@ class EconomyModel(Model):
         self._handle_defaults()
         self.bank.update_balance_sheet(self.households, self.firms)
         self._check_balance()
+        self._last_credit_rejections = float(self.bank.last_credit_rejections)
+        self._last_firm_downtime_share = float(
+            sum(1 for f in self.firms if getattr(f, "downtime_remaining", 0) > 0) / max(len(self.firms), 1)
+        )
+        self._last_reentry_count = float(sum(1 for f in self.firms if getattr(f, "reentered_this_step", False)))
 
         self.datacollector.collect(self)
 
@@ -232,7 +301,8 @@ class EconomyModel(Model):
         for firm in self.firms:
             target = firm.target_workers(self.adaptation_rate, self.wage)
             if target < len(firm.workers):
-                to_fire_ids = self.random.sample(firm.workers, len(firm.workers) - target)
+                n_fire = len(firm.workers) - target
+                to_fire_ids = self.random.sample(firm.workers, n_fire)
                 for uid in to_fire_ids:
                     hh = self._household_by_id(uid)
                     if hh:
@@ -246,7 +316,6 @@ class EconomyModel(Model):
                 unemployed = [h for h in unemployed if h not in hires]
 
     def _production_and_wages(self) -> None:
-        total_output = 0.0
         total_production = 0.0
         total_wage_bill = 0.0
         total_overhead = 0.0
@@ -266,12 +335,16 @@ class EconomyModel(Model):
             for worker, wage_amt in zip(workers, wages):
                 worker.receive_wage(wage_amt * pay_ratio, firm.unique_id)
 
-        # Recycle overhead (interpretable as taxes/fees/dividends) back to households as a lump-sum transfer.
         if total_overhead > 0 and self.households:
             per_hh = total_overhead / max(len(self.households), 1)
             for h in self.households:
                 h.deposit += per_hh
         self._last_transfers = total_overhead
+
+        prices = np.array([f.price for f in self.firms], dtype=float) if self.firms else np.array([], dtype=float)
+        markups = np.array([f.markup for f in self.firms], dtype=float) if self.firms else np.array([], dtype=float)
+        self._last_avg_markup = float(markups.mean()) if markups.size else 0.0
+        self._last_price_dispersion = float(prices.std()) if prices.size else 0.0
 
         self._last_production = total_production
         self._last_wage_bill = total_wage_bill
@@ -279,11 +352,24 @@ class EconomyModel(Model):
     def _consumption_market(self) -> None:
         total_consumption = 0.0
         total_sold_units = 0.0
+
+        if self.unemployment_transfer > 0:
+            unemployed = [h for h in self.households if not h.employed]
+            if unemployed:
+                for h in unemployed:
+                    h.deposit += self.unemployment_transfer
+                self._last_unemployment_transfers = self.unemployment_transfer * len(unemployed)
+            else:
+                self._last_unemployment_transfers = 0.0
+        else:
+            self._last_unemployment_transfers = 0.0
+
         for h in self.households:
             total_consumption += h.decide_consumption(self.bank, repay_fraction=self.repayment_fraction)
 
         if not self.firms:
             self._last_consumption = total_consumption
+            self._last_output = 0.0
             return
 
         prices = np.array([f.price for f in self.firms])
@@ -292,10 +378,15 @@ class EconomyModel(Model):
         gamma = self.quality_weight
         utility = -beta * (prices / max(prices.mean(), 1e-6)) + gamma * (qualities / max(qualities.mean(), 1e-6))
         weights_raw = np.exp(utility - utility.max())
-        weights = weights_raw / weights_raw.sum()
+        weights = weights_raw / max(weights_raw.sum(), 1e-12)
+
+        forecast_errors: List[float] = []
+        turnover_vals: List[float] = []
+        inv_gaps: List[float] = []
 
         for f, w in zip(self.firms, weights):
             demand = total_consumption * w / max(f.price, 1e-6)
+            inv_start = f.inventory
             sold = min(f.inventory, demand)
             revenue = sold * f.price
             f.inventory -= sold
@@ -304,12 +395,31 @@ class EconomyModel(Model):
             f.cash += revenue
             f.last_revenue = revenue
             total_sold_units += sold
+
             smoothed = (1 - self.demand_smoothing) * f.last_demand + self.demand_smoothing * demand
             f.last_demand = max(self._demand_floor_value, smoothed)
+
+            mem = self.demand_expectation_memory
+            pred = max(1e-6, f.expected_sales_ewma)
+            f.expected_sales_ewma = (1.0 - mem) * pred + mem * sold
+            f.last_sales_units = sold
+            f.last_forecast_error = abs(sold - pred) / max(pred, 1e-6)
+            forecast_errors.append(f.last_forecast_error)
+
+            avg_inv = max(1e-6, 0.5 * (inv_start + f.inventory))
+            turnover_vals.append(sold / avg_inv)
+
+            target_inventory = max(1e-6, self.inventory_target_days * max(1e-6, f.expected_sales_ewma))
+            inv_gaps.append((f.inventory - target_inventory) / target_inventory)
+
             if f.debt > 0 and f.cash > 0:
                 repay = min(f.cash * self.repayment_fraction, f.debt)
                 f.debt -= repay
                 f.cash -= repay
+
+        self._last_sales_forecast_error = float(np.mean(forecast_errors)) if forecast_errors else 0.0
+        self._last_inventory_turnover = float(np.mean(turnover_vals)) if turnover_vals else 0.0
+        self._last_inventory_gap = float(np.mean(inv_gaps)) if inv_gaps else 0.0
         self._last_consumption = total_consumption
         self._last_output = total_sold_units
 

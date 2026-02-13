@@ -35,6 +35,27 @@ PARAM_BOUNDS: Dict[str, Tuple[float, float]] = {
     "price_elasticity": (0.95, 2.9),
     "skill_wage_weight": (0.03, 0.49),
     "demand_smoothing": (0.06, 0.35),
+    # Structural block: price dynamics.
+    "price_adjust_speed": (0.08, 0.45),
+    "price_stickiness": (0.45, 0.90),
+    "max_price_step": (0.04, 0.22),
+    "inventory_target_days": (0.8, 2.8),
+    # Structural block: planning + labor frictions.
+    "demand_expectation_memory": (0.15, 0.65),
+    "max_hire_per_step": (3.0, 12.0),
+    "max_fire_per_step": (3.0, 12.0),
+    # Structural block: credit underwriting and firm resolution.
+    "hh_max_dsr": (0.20, 0.65),
+    "firm_max_dsr": (0.60, 2.20),
+    "firm_reentry_lag": (0.0, 4.0),
+    "firm_reentry_cash_fraction": (0.20, 0.85),
+    # Structural block: household smoothing.
+    "consumption_memory": (0.15, 0.75),
+    "precautionary_saving": (0.03, 0.35),
+    "consumption_floor_prop": (0.00, 0.35),
+    "consumption_ceiling_prop": (1.00, 2.80),
+    "unemployed_consumption_penalty": (0.05, 0.45),
+    "unemployment_transfer": (0.00, 0.25),
 }
 
 

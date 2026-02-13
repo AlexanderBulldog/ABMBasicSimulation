@@ -1,0 +1,6 @@
+# Model Tuning Leaderboard
+
+| iter_name                       |   composite_score | retain_recommendation   |   nroy_pct |   imax_median |   bad_run_pct_w2 |   md_share_at_max_reduction |   ou_share_at_max_reduction |   price_fail_driver_share |   confirmatory_nroy_delta_pp |   confirmatory_top2_stable |   legacy_all_gates_pass |
+|:--------------------------------|------------------:|:------------------------|-----------:|--------------:|-----------------:|----------------------------:|----------------------------:|--------------------------:|-----------------------------:|---------------------------:|------------------------:|
+| output_model_tune_iter1_full    |          2.95723  | retain                  |    98.7458 |       1.83817 |         0.333333 |                   0.0770533 |                   0.0135478 |                  0        |                     -1.8343  |                          1 |                       0 |
+| output_model_tune_baseline_full |         -0.238557 | revert                  |    54.9063 |       2.87345 |        24.4167   |                   0.222892  |                   0.126506  |                  0.831296 |                      4.77113 |                          1 |                       1 |

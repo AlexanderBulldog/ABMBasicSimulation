@@ -137,6 +137,47 @@ def _fmt(v: float, nd: int = 4) -> str:
     return f"{v:.{nd}f}"
 
 
+def _structural_gate_eval(wave2_lhs: pd.DataFrame, rep_summary: pd.DataFrame) -> pd.DataFrame:
+    checks: List[Tuple[str, bool, str]] = []
+    if "PriceDispersion_mean" in wave2_lhs.columns and not wave2_lhs.empty:
+        p50 = float(wave2_lhs["PriceDispersion_mean"].median())
+        checks.append(
+            (
+                "Structural: PriceDispersion median in [0.03,0.30]",
+                bool(0.03 <= p50 <= 0.30),
+                f"median={p50:.4f}",
+            )
+        )
+    if "InventoryGap_mean" in wave2_lhs.columns and not wave2_lhs.empty:
+        p95 = float(wave2_lhs["InventoryGap_mean"].abs().quantile(0.95))
+        checks.append(
+            (
+                "Structural: |InventoryGap| p95 <= 1.5",
+                bool(p95 <= 1.5),
+                f"p95_abs={p95:.4f}",
+            )
+        )
+    if "CreditRejections_mean" in wave2_lhs.columns and not wave2_lhs.empty:
+        p90 = float(wave2_lhs["CreditRejections_mean"].quantile(0.90))
+        checks.append(
+            (
+                "Structural: CreditRejections p90 <= 10",
+                bool(p90 <= 10.0),
+                f"p90={p90:.4f}",
+            )
+        )
+    if "FirmDowntimeShare_mean" in rep_summary.columns and not rep_summary.empty:
+        mx = float(rep_summary["FirmDowntimeShare_mean"].max())
+        checks.append(
+            (
+                "Structural: FirmDowntimeShare max <= 0.20",
+                bool(mx <= 0.20),
+                f"max={mx:.4f}",
+            )
+        )
+    return pd.DataFrame(checks, columns=["check", "pass", "value"]) if checks else pd.DataFrame(columns=["check", "pass", "value"])
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Build master research-core markdown report.")
     p.add_argument("--root", type=str, default="output_research_core")
@@ -238,6 +279,8 @@ def main() -> None:
     )
     gate_tbl = _gate_eval(wave2_hm, rep_summary, wave2_sa, gate_cfg, confirm_stats=confirm_stats)
     all_pass = bool(gate_tbl["pass"].all())
+    structural_gate_tbl = _structural_gate_eval(wave2_lhs, rep_summary)
+    structural_all_pass = bool(structural_gate_tbl["pass"].all()) if not structural_gate_tbl.empty else True
 
     emu_tbl.to_csv(tables_dir / "emulator_quality.csv", index=False)
     hm_tbl.to_csv(tables_dir / "history_matching_summary.csv", index=False)
@@ -245,6 +288,7 @@ def main() -> None:
     sa_rank_tbl.to_csv(tables_dir / "sa_ranking_wave2.csv", index=False)
     rep_tbl.to_csv(tables_dir / "representative_summary_stats.csv", index=False)
     gate_tbl.to_csv(tables_dir / "quality_gates.csv", index=False)
+    structural_gate_tbl.to_csv(tables_dir / "quality_gates_structural.csv", index=False)
 
     lines: List[str] = []
     lines.append("# Research Core Report\n\n")
@@ -302,6 +346,16 @@ def main() -> None:
     for _, row in gate_tbl.iterrows():
         lines.append(f"| {row['check']} | {'PASS' if bool(row['pass']) else 'FAIL'} | {row['value']} |\n")
     lines.append("\n")
+    lines.append("## Model-Structure Diagnostics\n")
+    if structural_gate_tbl.empty:
+        lines.append("- Structural gates: `n/a` (metrics absent in this run).\n\n")
+    else:
+        lines.append(f"- Structural gate (contour B): `{'PASS' if structural_all_pass else 'FAIL'}`\n")
+        lines.append("| Check | Pass | Value |\n")
+        lines.append("|---|---|---|\n")
+        for _, row in structural_gate_tbl.iterrows():
+            lines.append(f"| {row['check']} | {'PASS' if bool(row['pass']) else 'FAIL'} | {row['value']} |\n")
+        lines.append("\n")
     if confirm_stats is not None:
         lines.append("## Confirmatory Stability\n")
         lines.append(f"- confirmatory_nroy_pct: `{_fmt(float(confirm_stats.get('confirm_nroy_pct', np.nan)),2)}`\n")

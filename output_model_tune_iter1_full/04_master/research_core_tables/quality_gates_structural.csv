@@ -1,0 +1,5 @@
+check,pass,value
+"Structural: PriceDispersion median in [0.03,0.30]",True,median=0.0658
+Structural: |InventoryGap| p95 <= 1.5,True,p95_abs=0.2686
+Structural: CreditRejections p90 <= 10,False,p90=105.0000
+Structural: FirmDowntimeShare max <= 0.20,True,max=0.0000

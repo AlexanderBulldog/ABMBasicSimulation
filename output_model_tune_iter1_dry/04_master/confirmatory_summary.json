@@ -1,0 +1,18 @@
+{
+  "main_nroy_pct": 75.0,
+  "confirm_nroy_pct": 75.0,
+  "nroy_delta_pp": 0.0,
+  "main_sa_top2": [
+    "CU",
+    "EV",
+    "MD",
+    "OU"
+  ],
+  "confirm_sa_top2": [
+    "CU",
+    "EV",
+    "MD",
+    "OU"
+  ],
+  "sa_top2_stable": true
+}

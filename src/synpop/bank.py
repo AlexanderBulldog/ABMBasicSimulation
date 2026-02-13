@@ -42,6 +42,12 @@ class Bank:
         self.last_resolved = False
         self.last_bailout_amount = 0.0
         self.last_bailed_out = False
+        self.last_credit_requests = 0
+        self.last_credit_rejections = 0
+
+    def begin_step(self) -> None:
+        self.last_credit_requests = 0
+        self.last_credit_rejections = 0
 
     def accrue_interest(self, hh_list, firm_list) -> None:
         """Apply interest to deposits and loans; adjust equity by net margin."""
@@ -102,15 +108,45 @@ class Bank:
         used = self.state.loans_firms + self.state.loans_hh
         return max(0.0, cap - used)
 
-    def grant_loan(self, requested: float) -> float:
+    def grant_loan(
+        self,
+        requested: float,
+        borrower_type: str = "generic",
+        expected_income: float | None = None,
+        expected_revenue: float | None = None,
+        cash_buffer: float | None = None,
+        current_debt: float | None = None,
+        max_dsr: float | None = None,
+    ) -> float:
         if self.failed or requested <= 0:
             return 0.0
+        self.last_credit_requests += 1
         cap = self.credit_multiplier * max(self.state.equity, 0.0)
         used = self.state.loans_firms + self.state.loans_hh
         available = max(0.0, cap - used)
         base = min(requested, available)
         prudential_factor = clamp(1.0 - (used / cap) if cap > 0 else 1.0, 0.0, 1.0)
-        return base * prudential_factor
+        loan = base * prudential_factor
+
+        debt_now = max(0.0, float(current_debt) if current_debt is not None else 0.0)
+        dsr_cap = max(0.0, float(max_dsr) if max_dsr is not None else 0.0)
+        if dsr_cap > 0:
+            if borrower_type == "household":
+                income = max(1e-9, float(expected_income) if expected_income is not None else 0.0)
+                max_debt_stock = dsr_cap * income / max(self.loan_rate, 1e-6)
+                borrower_limit = max(0.0, max_debt_stock - debt_now)
+                loan = min(loan, borrower_limit)
+            elif borrower_type == "firm":
+                revenue = max(0.0, float(expected_revenue) if expected_revenue is not None else 0.0)
+                buffer_cash = max(0.0, float(cash_buffer) if cash_buffer is not None else 0.0)
+                debt_service_capacity = revenue + 0.25 * buffer_cash
+                max_debt_stock = dsr_cap * debt_service_capacity / max(self.loan_rate, 1e-6)
+                borrower_limit = max(0.0, max_debt_stock - debt_now)
+                loan = min(loan, borrower_limit)
+
+        if loan + 1e-12 < requested:
+            self.last_credit_rejections += 1
+        return max(0.0, loan)
 
     def update_balance_sheet(self, hh_list, firm_list) -> None:
         self.last_resolution_amount = 0.0

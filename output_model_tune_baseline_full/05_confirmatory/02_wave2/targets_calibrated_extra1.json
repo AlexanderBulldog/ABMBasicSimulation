@@ -1,0 +1,114 @@
+{
+  "_meta": {
+    "version_tag": "targets-refine-extra1",
+    "estimation_method": "fixed",
+    "estimation_sample": "output_research_core_v2_full\\05_confirmatory\\02_wave2\\lhs_runs_wave2.csv",
+    "notes": "sigma_model may be recalibrated by train_emulator --sigma-calibration-mode wave1_empirical",
+    "sigma_tuning_factor": 0.9,
+    "sigma_tuning_reason": "nroy_above_max_tighten_sigma_model"
+  },
+  "Employment_mean": {
+    "target": 65.0,
+    "sigma_obs": 4.0,
+    "sigma_model": 7.896892500000002,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Output_mean": {
+    "target": 80.0,
+    "sigma_obs": 8.0,
+    "sigma_model": 8.86820911573335,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Consumption_mean": {
+    "target": 80.0,
+    "sigma_obs": 8.0,
+    "sigma_model": 10.534843574547702,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "AvgPrice_mean": {
+    "target": 1.05,
+    "sigma_obs": 0.04000000000000001,
+    "sigma_model": 0.05840453495042258,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "DefaultsHH_rate": {
+    "target": 0.004,
+    "sigma_obs": 0.0016,
+    "sigma_model": 0.0004536000000000185,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankFailed_share": {
+    "target": 0.0,
+    "sigma_obs": 0.008,
+    "sigma_model": 3.5e-10,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankResolved_share": {
+    "target": 0.05,
+    "sigma_obs": 0.024,
+    "sigma_model": 0.012757500000000003,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankResolutionHaircut_mean": {
+    "target": 0.02,
+    "sigma_obs": 0.008,
+    "sigma_model": 0.0027504319312913984,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankBailedOut_share": {
+    "target": 0.02,
+    "sigma_obs": 0.016,
+    "sigma_model": 0.0032130000000000106,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankBailoutAmount_mean": {
+    "target": 0.2,
+    "sigma_obs": 0.16000000000000003,
+    "sigma_model": 0.05103000000000001,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Transfers_mean": {
+    "target": 6.5,
+    "sigma_obs": 1.6,
+    "sigma_model": 0.8034798918622685,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "HH_Deposit_mean": {
+    "target": 1.5,
+    "sigma_obs": 0.8,
+    "sigma_model": 0.3452220431577978,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Bank_Equity_mean": {
+    "target": 10.0,
+    "sigma_obs": 6.0,
+    "sigma_model": 1.923207640818972,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  }
+}
