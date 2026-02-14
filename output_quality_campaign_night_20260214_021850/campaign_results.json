@@ -1,0 +1,138 @@
+[
+  {
+    "experiment": "exp01_baseline_dense",
+    "returncode": 0,
+    "runtime_sec": 7147.0,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp01_baseline_dense",
+    "blocking_pass": false,
+    "n_blocking": 17,
+    "n_failed": 3,
+    "failed_checks": [
+      "Emulator CV-R2 median >= 0.60",
+      "Emulator CV-R2 share>=0.30 >= 0.65",
+      "Structural: CreditRejections p90 <= 30"
+    ],
+    "NROY wave2 in [25,65]%": "True:56.80%",
+    "I_max median wave2 < 3.0": "True:2.7246",
+    "I_max p95 wave2 < 4.5": "True:2.8756",
+    "Emulator CV-R2 median >= 0.60": "False:0.2854",
+    "Emulator CV-R2 share>=0.30 >= 0.65": "False:0.4815",
+    "Structural: CreditRejections p90 <= 30": "False:p90=97.7500"
+  },
+  {
+    "experiment": "exp02_emu_focus_high_n",
+    "returncode": 0,
+    "runtime_sec": 6562.0,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp02_emu_focus_high_n",
+    "blocking_pass": false,
+    "n_blocking": 17,
+    "n_failed": 3,
+    "failed_checks": [
+      "Emulator CV-R2 median >= 0.60",
+      "Emulator CV-R2 share>=0.30 >= 0.65",
+      "Structural: CreditRejections p90 <= 30"
+    ],
+    "NROY wave2 in [25,65]%": "True:54.00%",
+    "I_max median wave2 < 3.0": "True:2.6833",
+    "I_max p95 wave2 < 4.5": "True:3.5450",
+    "Emulator CV-R2 median >= 0.60": "False:0.3781",
+    "Emulator CV-R2 share>=0.30 >= 0.65": "False:0.5185",
+    "Structural: CreditRejections p90 <= 30": "False:p90=97.8050"
+  },
+  {
+    "experiment": "exp03_wave1_from_baseline_bounds",
+    "returncode": 1,
+    "runtime_sec": 373.4,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp03_wave1_from_baseline_bounds",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  },
+  {
+    "experiment": "exp04_wave1_from_credit_bounds",
+    "returncode": 0,
+    "runtime_sec": 7239.2,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp04_wave1_from_credit_bounds",
+    "blocking_pass": false,
+    "n_blocking": 17,
+    "n_failed": 3,
+    "failed_checks": [
+      "Emulator CV-R2 median >= 0.60",
+      "Emulator CV-R2 share>=0.30 >= 0.65",
+      "Structural: CreditRejections p90 <= 30"
+    ],
+    "NROY wave2 in [25,65]%": "True:55.20%",
+    "I_max median wave2 < 3.0": "True:2.7334",
+    "I_max p95 wave2 < 4.5": "True:2.9248",
+    "Emulator CV-R2 median >= 0.60": "False:0.1074",
+    "Emulator CV-R2 share>=0.30 >= 0.65": "False:0.2000",
+    "Structural: CreditRejections p90 <= 30": "False:p90=81.1500"
+  },
+  {
+    "experiment": "exp05_wave1_from_blended_bounds",
+    "returncode": 0,
+    "runtime_sec": 6466.5,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp05_wave1_from_blended_bounds",
+    "blocking_pass": false,
+    "n_blocking": 17,
+    "n_failed": 3,
+    "failed_checks": [
+      "Emulator CV-R2 median >= 0.60",
+      "Emulator CV-R2 share>=0.30 >= 0.65",
+      "Structural: CreditRejections p90 <= 30"
+    ],
+    "NROY wave2 in [25,65]%": "True:55.60%",
+    "I_max median wave2 < 3.0": "True:2.7337",
+    "I_max p95 wave2 < 4.5": "True:2.8867",
+    "Emulator CV-R2 median >= 0.60": "False:-0.0014",
+    "Emulator CV-R2 share>=0.30 >= 0.65": "False:0.1667",
+    "Structural: CreditRejections p90 <= 30": "False:p90=96.0500"
+  },
+  {
+    "experiment": "exp02_adapt_emu",
+    "returncode": 0,
+    "runtime_sec": 6594.2,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp02_adapt_emu",
+    "blocking_pass": false,
+    "n_blocking": 17,
+    "n_failed": 3,
+    "failed_checks": [
+      "Emulator CV-R2 median >= 0.60",
+      "Emulator CV-R2 share>=0.30 >= 0.65",
+      "Structural: CreditRejections p90 <= 30"
+    ],
+    "NROY wave2 in [25,65]%": "True:54.00%",
+    "I_max median wave2 < 3.0": "True:2.6833",
+    "I_max p95 wave2 < 4.5": "True:3.5450",
+    "Emulator CV-R2 median >= 0.60": "False:0.3781",
+    "Emulator CV-R2 share>=0.30 >= 0.65": "False:0.5185",
+    "Structural: CreditRejections p90 <= 30": "False:p90=97.8050"
+  },
+  {
+    "experiment": "exp03_adapt_emu",
+    "returncode": 120,
+    "runtime_sec": 2997.2,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp03_adapt_emu",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  },
+  {
+    "experiment": "exp05_adapt_emu",
+    "returncode": 120,
+    "runtime_sec": 189.5,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021850\\exp05_adapt_emu",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  }
+]

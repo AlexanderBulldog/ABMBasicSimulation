@@ -1,0 +1,157 @@
+{
+  "_meta": {
+    "version_tag": "targets-report-v3",
+    "estimation_method": "fixed",
+    "estimation_sample": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_research_core_v3_tuned2\\waves\\wave_04\\lhs_runs_wave4.csv",
+    "notes": "fixed_baseline priors for HM; monetary sigma_model tightened by ~12% for v3 preflight/nightly",
+    "economic_priority_targets": [
+      "Employment_mean",
+      "Output_mean",
+      "Consumption_mean",
+      "AvgPrice_mean",
+      "HH_Deposit_mean",
+      "Bank_Equity_mean",
+      "CreditRejections_mean",
+      "InventoryGap_mean"
+    ],
+    "andrianakis_alignment": "iterative_hm_with_explicit_uncertainty_components_ev_ou_md_cu",
+    "sigma_tuning_factor": 0.88,
+    "sigma_tuning_reason": "nroy_above_max_tighten_sigma_model"
+  },
+  "Employment_mean": {
+    "target": 65.0,
+    "sigma_obs": 5.0,
+    "sigma_model": 22.62782856471286,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Output_mean": {
+    "target": 80.0,
+    "sigma_obs": 10.0,
+    "sigma_model": 45.25565712942572,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Consumption_mean": {
+    "target": 80.0,
+    "sigma_obs": 10.0,
+    "sigma_model": 45.25565712942572,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "AvgPrice_mean": {
+    "target": 1.05,
+    "sigma_obs": 0.05,
+    "sigma_model": 0.2639913332549835,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "DefaultsHH_rate": {
+    "target": 0.004,
+    "sigma_obs": 0.002,
+    "sigma_model": 0.010285376620324029,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankFailed_share": {
+    "target": 0.0,
+    "sigma_obs": 0.01,
+    "sigma_model": 0.034284588734413424,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankResolved_share": {
+    "target": 0.05,
+    "sigma_obs": 0.03,
+    "sigma_model": 0.1714229436720671,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankResolutionHaircut_mean": {
+    "target": 0.02,
+    "sigma_obs": 0.01,
+    "sigma_model": 0.06856917746882685,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankBailedOut_share": {
+    "target": 0.02,
+    "sigma_obs": 0.02,
+    "sigma_model": 0.1028537662032403,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankBailoutAmount_mean": {
+    "target": 0.2,
+    "sigma_obs": 0.2,
+    "sigma_model": 0.7954024586383914,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Transfers_mean": {
+    "target": 6.5,
+    "sigma_obs": 2.0,
+    "sigma_model": 7.954024586383915,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "HH_Deposit_mean": {
+    "target": 1.5,
+    "sigma_obs": 1.0,
+    "sigma_model": 3.9770122931919576,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Bank_Equity_mean": {
+    "target": 10.0,
+    "sigma_obs": 7.5,
+    "sigma_model": 26.536271680436,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "PriceDispersion_mean": {
+    "target": 0.1,
+    "sigma_obs": 0.06,
+    "sigma_model": 0.12,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  },
+  "InventoryGap_mean": {
+    "target": 0.0,
+    "sigma_obs": 0.25,
+    "sigma_model": 0.35,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  },
+  "CreditRejections_mean": {
+    "target": 30.0,
+    "sigma_obs": 5.0,
+    "sigma_model": 20.0,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  },
+  "FirmDowntimeShare_mean": {
+    "target": 0.05,
+    "sigma_obs": 0.04,
+    "sigma_model": 0.07,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  }
+}

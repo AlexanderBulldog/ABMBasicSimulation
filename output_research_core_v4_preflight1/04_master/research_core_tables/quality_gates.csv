@@ -1,0 +1,21 @@
+check,pass,value,contour,blocking,gate_group,reason_code
+"NROY wave2 in [25,60]%",True,26.00%,legacy,False,emulator_hm,ok
+"NROY wave2 in [25,65]%",True,26.00%,stability,True,emulator_hm,ok
+I_max median wave2 < 3.0,True,2.8871,stability,True,emulator_hm,ok
+I_max p95 wave2 < 4.5,True,3.1928,stability,True,emulator_hm,ok
+Emulator CV-R2 median >= 0.60,False,0.3367,stability,True,emulator_hm,emu_median_below_min
+Emulator CV-R2 share>=0.30 >= 0.65,False,0.6296,stability,True,emulator_hm,emu_share_below_min
+bad_run_pct_w2 <= 5%,True,0.00%,stability,True,abm,ok
+Representative Employment_mean >= 45,True,min=88.2750,stability,True,interpretability,ok
+Representative Output_mean >= 50,True,min=102.7465,stability,True,interpretability,ok
+Representative Consumption_mean >= 50,True,min=109.3989,stability,True,interpretability,ok
+Representative BankFailed_share == 0,True,max=0.000000,stability,True,abm,ok
+Representative BalanceOK_share == 1,True,min=1.000000,stability,True,abm,ok
+SA components EV/OU/MD/CU present,True,"components=['CU', 'EV', 'MD', 'OU']",stability,True,confirmatory,ok
+SA has >=16 rows,True,rows=16,stability,True,confirmatory,ok
+SA ranks present,True,rank_cols=True,stability,True,confirmatory,ok
+"Structural: PriceDispersion median in [0.03,0.30]",True,median=0.0973,structural,True,interpretability,ok
+Structural: |InventoryGap| p95 <= 1.5,True,p95_abs=0.3399,structural,True,interpretability,ok
+Structural(reference): CreditRejections p90 <= 30,False,p90=103.0050,structural,False,interpretability,credit_rejections_reference_failed
+Structural: CreditRejections p90 <= 90,False,p90=103.0050,structural,True,interpretability,credit_rejections_abs_too_high
+Structural: CreditRejections p90 improvement vs baseline >= 15%,False,"improve=1.72% (baseline=104.805, p90=103.0050)",structural,True,interpretability,credit_rejections_improvement_too_low

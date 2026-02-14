@@ -1,0 +1,6 @@
+experiment,returncode,runtime_sec,outdir,blocking_pass,n_blocking,n_failed,failed_checks,score
+exp01_baseline_dense,120,132.5,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021802\exp01_baseline_dense,False,0,0,['missing_quality_gates'],0
+exp02_emu_focus_high_n,120,176.6,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021802\exp02_emu_focus_high_n,False,0,0,['missing_quality_gates'],0
+exp03_wave1_from_baseline_bounds,120,154.3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021802\exp03_wave1_from_baseline_bounds,False,0,0,['missing_quality_gates'],0
+exp04_wave1_from_credit_bounds,120,154.8,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021802\exp04_wave1_from_credit_bounds,False,0,0,['missing_quality_gates'],0
+exp05_wave1_from_blended_bounds,120,182.5,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021802\exp05_wave1_from_blended_bounds,False,0,0,['missing_quality_gates'],0

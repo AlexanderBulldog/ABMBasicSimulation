@@ -28,7 +28,7 @@ PARAM_BOUNDS: Dict[str, Tuple[float, float]] = {
     "productivity": (0.95, 1.95),
     "loan_rate": (0.012, 0.073),
     "deposit_rate": (0.001, 0.028),
-    "bank_credit_multiplier": (4.2, 11.5),
+    "bank_credit_multiplier": (4.2, 14.0),
     "hh_debt_cap_multiplier": (2.1, 4.8),
     "firm_debt_cap_multiplier": (1.6, 4.8),
     "adaptation_rate": (0.25, 0.95),

@@ -1,0 +1,8 @@
+wave,iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
+2,0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v3_tuned2\01_wave1\targets_for_wave_final.json,360.0,4.166666666666666,3.345165742385951,4.568236859035758
+2,1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v3_tuned2\02_wave2\targets_tuned_iter1.json,360.0,8.333333333333332,3.3010528645007025,4.251971880214635
+2,2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v3_tuned2\02_wave2\targets_tuned_iter2.json,360.0,15.833333333333332,3.260075433957553,3.999187425358264
+2,3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v3_tuned2\02_wave2\targets_tuned_iter3.json,360.0,19.166666666666668,3.250688598931169,3.8031012836604234
+2,4,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v3_tuned2\02_wave2\targets_tuned_iter4.json,360.0,21.666666666666668,3.200679116504136,3.6996727845445294
+2,5,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v3_tuned2\02_wave2\targets_tuned_iter5.json,360.0,24.166666666666668,3.1865188198120955,3.6847163967847387
+2,6,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v3_tuned2\02_wave2\targets_tuned_iter6.json,360.0,28.333333333333332,3.180220912179724,3.5973200740886573

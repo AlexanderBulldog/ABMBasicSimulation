@@ -201,7 +201,9 @@ class EconomyModel(Model):
                 "InventoryGap": lambda m: m._last_inventory_gap,
                 "SalesForecastError": lambda m: m._last_sales_forecast_error,
                 "InventoryTurnover": lambda m: m._last_inventory_turnover,
+                "CreditRequests": lambda m: m._last_credit_requests,
                 "CreditRejections": lambda m: m._last_credit_rejections,
+                "CreditRejectionRate": lambda m: m._last_credit_rejection_rate,
                 "FirmDowntimeShare": lambda m: m._last_firm_downtime_share,
                 "ReentryCount": lambda m: m._last_reentry_count,
                 "Bank_Equity": lambda m: m.bank.state.equity,
@@ -235,7 +237,9 @@ class EconomyModel(Model):
         self._last_inventory_gap = 0.0
         self._last_sales_forecast_error = 0.0
         self._last_inventory_turnover = 0.0
+        self._last_credit_requests = 0.0
         self._last_credit_rejections = 0.0
+        self._last_credit_rejection_rate = 0.0
         self._last_firm_downtime_share = 0.0
         self._last_reentry_count = 0.0
         self._demand_floor_value = self.demand_floor if self.demand_floor is not None else 0.0
@@ -282,7 +286,11 @@ class EconomyModel(Model):
         self._handle_defaults()
         self.bank.update_balance_sheet(self.households, self.firms)
         self._check_balance()
+        self._last_credit_requests = float(self.bank.last_credit_requests)
         self._last_credit_rejections = float(self.bank.last_credit_rejections)
+        self._last_credit_rejection_rate = (
+            float(self.bank.last_credit_rejections) / max(float(self.bank.last_credit_requests), 1.0)
+        )
         self._last_firm_downtime_share = float(
             sum(1 for f in self.firms if getattr(f, "downtime_remaining", 0) > 0) / max(len(self.firms), 1)
         )

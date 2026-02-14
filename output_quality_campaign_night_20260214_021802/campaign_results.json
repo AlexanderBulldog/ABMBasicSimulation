@@ -1,0 +1,62 @@
+[
+  {
+    "experiment": "exp01_baseline_dense",
+    "returncode": 120,
+    "runtime_sec": 132.5,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021802\\exp01_baseline_dense",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  },
+  {
+    "experiment": "exp02_emu_focus_high_n",
+    "returncode": 120,
+    "runtime_sec": 176.6,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021802\\exp02_emu_focus_high_n",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  },
+  {
+    "experiment": "exp03_wave1_from_baseline_bounds",
+    "returncode": 120,
+    "runtime_sec": 154.3,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021802\\exp03_wave1_from_baseline_bounds",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  },
+  {
+    "experiment": "exp04_wave1_from_credit_bounds",
+    "returncode": 120,
+    "runtime_sec": 154.8,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021802\\exp04_wave1_from_credit_bounds",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  },
+  {
+    "experiment": "exp05_wave1_from_blended_bounds",
+    "returncode": 120,
+    "runtime_sec": 182.5,
+    "outdir": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_quality_campaign_night_20260214_021802\\exp05_wave1_from_blended_bounds",
+    "blocking_pass": false,
+    "n_blocking": 0,
+    "n_failed": 0,
+    "failed_checks": [
+      "missing_quality_gates"
+    ]
+  }
+]

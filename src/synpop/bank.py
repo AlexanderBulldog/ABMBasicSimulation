@@ -125,7 +125,17 @@ class Bank:
         used = self.state.loans_firms + self.state.loans_hh
         available = max(0.0, cap - used)
         base = min(requested, available)
-        prudential_factor = clamp(1.0 - (used / cap) if cap > 0 else 1.0, 0.0, 1.0)
+        # Smooth prudential taper: keep normal lending in mid-utilization regimes,
+        # then gradually ration near the balance-sheet cap.
+        if cap > 0:
+            util = clamp(used / cap, 0.0, 1.5)
+            if util <= 0.70:
+                prudential_factor = 1.0
+            else:
+                # At cap utilization, keep a small positive flow instead of hard shutdown.
+                prudential_factor = clamp(1.0 - (util - 0.70) / 0.60, 0.35, 1.0)
+        else:
+            prudential_factor = 1.0
         loan = base * prudential_factor
 
         debt_now = max(0.0, float(current_debt) if current_debt is not None else 0.0)
@@ -134,17 +144,21 @@ class Bank:
             if borrower_type == "household":
                 income = max(1e-9, float(expected_income) if expected_income is not None else 0.0)
                 max_debt_stock = dsr_cap * income / max(self.loan_rate, 1e-6)
-                borrower_limit = max(0.0, max_debt_stock - debt_now)
+                # Allow limited rollover of existing debt to avoid unnecessary hard denials.
+                borrower_limit = max(0.0, max_debt_stock - 0.90 * debt_now)
                 loan = min(loan, borrower_limit)
             elif borrower_type == "firm":
                 revenue = max(0.0, float(expected_revenue) if expected_revenue is not None else 0.0)
                 buffer_cash = max(0.0, float(cash_buffer) if cash_buffer is not None else 0.0)
-                debt_service_capacity = revenue + 0.25 * buffer_cash
+                # Allow part of liquid buffer to support debt service for short-term funding gaps.
+                debt_service_capacity = revenue + 0.50 * buffer_cash
                 max_debt_stock = dsr_cap * debt_service_capacity / max(self.loan_rate, 1e-6)
-                borrower_limit = max(0.0, max_debt_stock - debt_now)
+                # Firms face lumpy cash needs; permit conservative refinancing of outstanding debt.
+                borrower_limit = max(0.0, max_debt_stock - 0.85 * debt_now)
                 loan = min(loan, borrower_limit)
 
-        if loan + 1e-12 < requested:
+        # Rejection is counted only for full denials; partial grants remain approved-but-rationed.
+        if loan <= 1e-12:
             self.last_credit_rejections += 1
         return max(0.0, loan)
 

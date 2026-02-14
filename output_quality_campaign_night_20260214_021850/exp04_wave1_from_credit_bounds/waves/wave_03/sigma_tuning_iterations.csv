@@ -1,0 +1,5 @@
+wave,iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
+3,0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp04_wave1_from_credit_bounds\02_wave2\targets_for_wave_final.json,600.0,95.0,2.3707808459904656,2.7434654223102872
+3,1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp04_wave1_from_credit_bounds\waves\wave_03\targets_tuned_iter1.json,600.0,84.5,2.5070990867672376,2.888427438060673
+3,2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp04_wave1_from_credit_bounds\waves\wave_03\targets_tuned_iter2.json,600.0,67.5,2.6680071905820464,3.025450589433535
+3,3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp04_wave1_from_credit_bounds\waves\wave_03\targets_tuned_iter3.json,600.0,35.0,2.831401594140748,3.180502381439582
