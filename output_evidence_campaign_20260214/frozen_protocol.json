@@ -1,0 +1,18 @@
+{
+  "campaign_id": "evidence_20260214",
+  "created_utc": "2026-02-14T20:08:03.647074+00:00",
+  "goal": "Core PASS evidence campaign with 2/3 replication",
+  "core_pass_blocking_only": true,
+  "acceptance": {
+    "min_pass_runs": 2,
+    "n_runs": 3
+  },
+  "consistency": {
+    "nroy_tol_pp": 8.0,
+    "r2_tol": 0.08
+  },
+  "fixed_wave_bounds": {
+    "wave_min": 2,
+    "wave_max": 3
+  }
+}

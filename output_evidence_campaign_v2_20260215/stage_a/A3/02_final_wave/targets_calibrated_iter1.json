@@ -1,0 +1,157 @@
+{
+  "_meta": {
+    "version_tag": "targets-report-v3",
+    "estimation_method": "fixed",
+    "estimation_sample": "C:\\Users\\Alexander\\Desktop\\Education\\Aspa\\code\\output_evidence_campaign_v2_20260215\\stage_a\\A3\\waves\\wave_03\\lhs_runs_wave3.csv",
+    "notes": "fixed_baseline priors for HM; monetary sigma_model tightened by ~12% for v3 preflight/nightly",
+    "economic_priority_targets": [
+      "Employment_mean",
+      "Output_mean",
+      "Consumption_mean",
+      "AvgPrice_mean",
+      "HH_Deposit_mean",
+      "Bank_Equity_mean",
+      "CreditRejections_mean",
+      "InventoryGap_mean"
+    ],
+    "andrianakis_alignment": "iterative_hm_with_explicit_uncertainty_components_ev_ou_md_cu",
+    "sigma_tuning_factor": 0.9,
+    "sigma_tuning_reason": "nroy_above_max_tighten_sigma_model"
+  },
+  "Employment_mean": {
+    "target": 65.0,
+    "sigma_obs": 5.0,
+    "sigma_model": 5.9399999999999995,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Output_mean": {
+    "target": 80.0,
+    "sigma_obs": 10.0,
+    "sigma_model": 11.879999999999999,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Consumption_mean": {
+    "target": 80.0,
+    "sigma_obs": 10.0,
+    "sigma_model": 11.879999999999999,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "AvgPrice_mean": {
+    "target": 1.05,
+    "sigma_obs": 0.05,
+    "sigma_model": 0.0693,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "DefaultsHH_rate": {
+    "target": 0.004,
+    "sigma_obs": 0.002,
+    "sigma_model": 0.0027,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankFailed_share": {
+    "target": 0.0,
+    "sigma_obs": 0.01,
+    "sigma_model": 0.009000000000000001,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankResolved_share": {
+    "target": 0.05,
+    "sigma_obs": 0.03,
+    "sigma_model": 0.045000000000000005,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankResolutionHaircut_mean": {
+    "target": 0.02,
+    "sigma_obs": 0.01,
+    "sigma_model": 0.018000000000000002,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankBailedOut_share": {
+    "target": 0.02,
+    "sigma_obs": 0.02,
+    "sigma_model": 0.027,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "BankBailoutAmount_mean": {
+    "target": 0.2,
+    "sigma_obs": 0.2,
+    "sigma_model": 0.2088,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Transfers_mean": {
+    "target": 6.5,
+    "sigma_obs": 2.0,
+    "sigma_model": 2.088,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "HH_Deposit_mean": {
+    "target": 1.5,
+    "sigma_obs": 1.0,
+    "sigma_model": 1.044,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "Bank_Equity_mean": {
+    "target": 10.0,
+    "sigma_obs": 7.5,
+    "sigma_model": 6.966,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": true
+  },
+  "PriceDispersion_mean": {
+    "target": 0.1,
+    "sigma_obs": 0.06,
+    "sigma_model": 0.108,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  },
+  "InventoryGap_mean": {
+    "target": 0.0,
+    "sigma_obs": 0.25,
+    "sigma_model": 0.315,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  },
+  "CreditRejections_mean": {
+    "target": 80.0,
+    "sigma_obs": 10.0,
+    "sigma_model": 18.0,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  },
+  "FirmDowntimeShare_mean": {
+    "target": 0.05,
+    "sigma_obs": 0.04,
+    "sigma_model": 0.06300000000000001,
+    "sigma_ev": null,
+    "sigma_ev_quantile": 0.9,
+    "enabled_for_sa": false
+  }
+}

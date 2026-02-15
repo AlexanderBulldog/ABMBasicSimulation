@@ -13,7 +13,12 @@ for p in (str(ROOT), str(SCRIPTS)):
         sys.path.insert(0, p)
 
 from make_research_master_report import _blocking_gates, _legacy_gate_eval  # noqa: E402
-from run_research_core import _evaluate_go_no_go, _preflight_improb_thresholds, _sigma_tuning_decision  # noqa: E402
+from run_research_core import (  # noqa: E402
+    _evaluate_go_no_go,
+    _next_preflight_threshold,
+    _preflight_improb_thresholds,
+    _sigma_tuning_decision,
+)
 
 
 def test_sigma_tuning_decision_tightens_when_nroy_above_band() -> None:
@@ -26,6 +31,26 @@ def test_sigma_tuning_decision_tightens_when_nroy_above_band() -> None:
 
 def test_preflight_thresholds_has_max_one_retry() -> None:
     assert _preflight_improb_thresholds(base=2.6, bump=0.15, max_value=2.9) == [2.6, 2.75]
+
+
+def test_preflight_retry_nroy_safe_tightens_when_nroy_high() -> None:
+    go_no_go = {
+        "checks": [
+            {"check": "NROY wave2 in [25,65]%", "value": "70.00%", "pass": False},
+            {"check": "Emulator CV-R2 median >= 0.60", "value": "0.65", "pass": True},
+        ]
+    }
+    nxt, reason = _next_preflight_threshold(
+        policy="nroy_safe",
+        current=2.6,
+        go_no_go=go_no_go,
+        up_step=0.15,
+        down_step=0.10,
+        min_value=2.45,
+        max_value=2.90,
+    )
+    assert nxt == 2.5
+    assert reason == "nroy_high_tighten"
 
 
 def test_go_no_go_uses_blocking_only(tmp_path: Path) -> None:

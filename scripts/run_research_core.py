@@ -45,6 +45,10 @@ def _parse_nroy_band(raw: str) -> tuple[float, float]:
 
 def _cfg(args: argparse.Namespace) -> Dict[str, object]:
     nroy_min, nroy_max = _parse_nroy_band(args.nroy_band)
+    final_wave_alias = str(args.final_wave_alias or "wave2").strip().lower()
+    if final_wave_alias not in {"wave2", "final"}:
+        raise SystemExit("--final-wave-alias must be one of: wave2, final")
+    canonical_final_wave_dir = "02_wave2" if final_wave_alias == "wave2" else "02_final_wave"
     base: Dict[str, object] = {
         "protocol": {
             "version_tag": "research-core-v3",
@@ -52,12 +56,15 @@ def _cfg(args: argparse.Namespace) -> Dict[str, object]:
             "goal": "economically_explainable_strict_calibration_for_scientific_presentation",
             "allowed_adjustments": ["sigma_model", "sigma_obs"],
             "andrianakis_style": True,
+            "campaign_id": str(args.campaign_id or "").strip(),
+            "seed_offset": int(args.seed_offset),
+            "final_wave_alias": final_wave_alias,
         },
         "mode": args.mode,
         "profile": args.profile,
         "paths": {
             "wave1_dir": "01_wave1",
-            "wave2_dir": "02_wave2",
+            "wave2_dir": canonical_final_wave_dir,
             "extra_waves_dir": "waves",
             "report_set_dir": "03_report_set",
             "master_dir": "04_master",
@@ -72,7 +79,7 @@ def _cfg(args: argparse.Namespace) -> Dict[str, object]:
         },
         "wave_lhs": {
             "n": 350,
-            "seed": 0,
+            "seed": int(args.seed_offset),
             "seeds": "0,1,2",
             "steps": 220,
             "window": 30,
@@ -119,7 +126,8 @@ def _cfg(args: argparse.Namespace) -> Dict[str, object]:
         },
         "confirmatory": {
             "enabled": True,
-            "seed_offset": 101,
+            "seed_offset": int(args.confirm_seed_offset_base),
+            "seed_offset_base": int(args.confirm_seed_offset_base),
         },
         "quality_gate": {
             "nroy_wave2_min_pct": nroy_min,
@@ -380,12 +388,12 @@ def _evaluate_wave_blocking(wave_stats: Dict[str, float], emu_stats: Dict[str, f
     )
 
 
-def _sync_final_wave_to_wave2(final_wave_dir: Path, canonical_wave2_dir: Path) -> None:
-    if final_wave_dir.resolve() == canonical_wave2_dir.resolve():
+def _sync_final_wave_to_alias(final_wave_dir: Path, canonical_wave_dir: Path) -> None:
+    if final_wave_dir.resolve() == canonical_wave_dir.resolve():
         return
-    if canonical_wave2_dir.exists():
-        shutil.rmtree(canonical_wave2_dir)
-    shutil.copytree(final_wave_dir, canonical_wave2_dir)
+    if canonical_wave_dir.exists():
+        shutil.rmtree(canonical_wave_dir)
+    shutil.copytree(final_wave_dir, canonical_wave_dir)
 
 
 def _run_adaptive_waves(root: Path, outdir: Path, cfg: Dict[str, object], py: str, env: Dict[str, str]) -> Dict[str, object]:
@@ -498,8 +506,8 @@ def _run_adaptive_waves(root: Path, outdir: Path, cfg: Dict[str, object], py: st
     if final_wave_dir is None:
         raise SystemExit("No wave executed")
 
-    canonical_wave2_dir = outdir / str(paths_cfg["wave2_dir"])
-    _sync_final_wave_to_wave2(final_wave_dir, canonical_wave2_dir)
+    canonical_wave_dir = outdir / str(paths_cfg["wave2_dir"])
+    _sync_final_wave_to_alias(final_wave_dir, canonical_wave_dir)
 
     pd.DataFrame(rows).to_csv(outdir / "waves_summary.csv", index=False)
     (outdir / "stopping_diagnostics.json").write_text(
@@ -522,8 +530,9 @@ def _run_adaptive_waves(root: Path, outdir: Path, cfg: Dict[str, object], py: st
     return {
         "final_wave": final_wave_idx,
         "final_wave_dir": final_wave_dir,
+        "final_wave_n": int(rows[-1]["n"]) if rows else int(wave_cfg["n"]),
         "wave1_dir": outdir / str(paths_cfg["wave1_dir"]),
-        "wave2_dir": canonical_wave2_dir,
+        "wave2_dir": canonical_wave_dir,
         "waves_summary": outdir / "waves_summary.csv",
         "stopping_diagnostics": outdir / "stopping_diagnostics.json",
     }
@@ -538,10 +547,12 @@ def _run_confirmatory_for_final_wave(
     final_bounds_csv: Path,
     final_targets: Path,
     final_wave_id: int,
+    final_wave_n: int,
 ) -> Dict[str, object]:
     wave_cfg = dict(cfg["wave_lhs"])
     hm_sa = dict(cfg["hm_sa"])
-    seed_offset = int(dict(cfg["confirmatory"]).get("seed_offset", 101))
+    conf_cfg = dict(cfg["confirmatory"])
+    seed_offset = int(conf_cfg.get("seed_offset_base", conf_cfg.get("seed_offset", 101)))
 
     c_wave_dir = confirm_root / f"wave_{final_wave_id:02d}"
     c_wave_dir.mkdir(parents=True, exist_ok=True)
@@ -552,7 +563,7 @@ def _run_confirmatory_for_final_wave(
             py,
             "scripts/run_lhs.py",
             "--n",
-            str(int(wave_cfg["n"])),
+            str(int(final_wave_n)),
             "--seed",
             str(int(wave_cfg["seed"]) + seed_offset + final_wave_id - 1),
             "--seeds",
@@ -616,6 +627,62 @@ def _preflight_improb_thresholds(base: float, bump: float = 0.15, max_value: flo
     second = float(min(base + bump, max_value))
     return [first] if abs(second - first) < 1e-12 else [first, second]
 
+
+def _parse_pct_value(raw: str) -> float | None:
+    s = str(raw).strip()
+    if not s:
+        return None
+    try:
+        if s.endswith("%"):
+            return float(s[:-1])
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _find_check(checks: list[dict[str, object]], prefix: str) -> dict[str, object] | None:
+    for c in checks:
+        chk = str(c.get("check", ""))
+        if chk.startswith(prefix):
+            return c
+    return None
+
+
+def _next_preflight_threshold(
+    *,
+    policy: str,
+    current: float,
+    go_no_go: Dict[str, object],
+    up_step: float,
+    down_step: float,
+    min_value: float,
+    max_value: float,
+) -> tuple[float | None, str]:
+    checks = list(go_no_go.get("checks", []))
+    if policy == "legacy":
+        nxt = float(min(current + up_step, max_value))
+        if abs(nxt - current) < 1e-12:
+            return None, "legacy_retry_at_cap"
+        return nxt, "legacy_retry"
+
+    nroy_row = _find_check(checks, "NROY wave2 in [25,65]%")
+    if nroy_row is None:
+        return None, "nroy_safe_no_nroy_check"
+    nroy_pct = _parse_pct_value(str(nroy_row.get("value", "")))
+    if nroy_pct is None:
+        return None, "nroy_safe_unparsed_nroy"
+    if nroy_pct > 65.0:
+        nxt = float(max(current - down_step, min_value))
+        if abs(nxt - current) < 1e-12:
+            return None, "nroy_high_tighten_at_floor"
+        return nxt, "nroy_high_tighten"
+    if nroy_pct < 25.0:
+        nxt = float(min(current + up_step, max_value))
+        if abs(nxt - current) < 1e-12:
+            return None, "nroy_low_relax_at_cap"
+        return nxt, "nroy_low_relax"
+    return None, "nroy_in_band_keep_threshold"
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Run research-core v3 pipeline.")
     p.add_argument("--mode", choices=["dry", "full", "preflight"], default="full")
@@ -649,6 +716,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--credit-p90-improve-min-pct", type=float, default=15.0)
     p.add_argument("--credit-rejection-rate-mean-max", type=float, default=0.80)
     p.add_argument("--preflight-launch-full", type=_to_bool, default=True)
+    p.add_argument("--preflight-retry-policy", choices=["legacy", "nroy_safe"], default="legacy")
+    p.add_argument("--preflight-threshold-up-step", type=float, default=0.15)
+    p.add_argument("--preflight-threshold-down-step", type=float, default=0.10)
+    p.add_argument("--preflight-threshold-min", type=float, default=2.45)
+    p.add_argument("--preflight-threshold-max", type=float, default=2.90)
+    p.add_argument("--final-wave-alias", choices=["wave2", "final"], default="wave2")
+    p.add_argument("--confirm-seed-offset-base", type=int, default=101)
+    p.add_argument("--seed-offset", type=int, default=0)
+    p.add_argument("--campaign-id", type=str, default="")
     return p.parse_args()
 
 
@@ -749,6 +825,7 @@ def _execute_pipeline(root: Path, outdir: Path, cfg: Dict[str, object]) -> Dict[
             final_bounds_csv=final_wave_dir / "refined_intervals.csv",
             final_targets=final_wave_dir / "targets_for_wave_final.json",
             final_wave_id=int(wave_exec["final_wave"]),
+            final_wave_n=int(wave_exec.get("final_wave_n", cfg["wave_lhs"]["n"])),
         )
         main_hm = _hm_stats(wave2_dir / "history_matching.csv")
         conf_hm = _hm_stats(Path(c_out["hm"]))
@@ -815,21 +892,50 @@ def main() -> None:
 
     cfg_preflight = _cfg(args)
     hm_sa_cfg = dict(cfg_preflight["hm_sa"])
-    thresholds = _preflight_improb_thresholds(float(hm_sa_cfg["improb_threshold"]), bump=0.15, max_value=2.9)
     attempts: list[dict[str, object]] = []
     preflight_pass = False
-    for idx, thr in enumerate(thresholds):
+    thr = float(hm_sa_cfg["improb_threshold"])
+    for idx in range(2):
         hm_sa_cfg["improb_threshold"] = float(thr)
         cfg_preflight["hm_sa"] = hm_sa_cfg
-        print(f"[INFO] Preflight attempt {idx + 1}/{len(thresholds)} with improb_threshold={thr:.2f}")
+        print(f"[INFO] Preflight attempt {idx + 1}/2 with improb_threshold={thr:.2f}")
         artifacts = _execute_pipeline(root=root, outdir=outdir, cfg=cfg_preflight)
         go_no_go = _evaluate_go_no_go(artifacts["quality_gates"])
-        attempts.append({"attempt": idx + 1, "improb_threshold": thr, "pass": bool(go_no_go["pass"]), "checks": go_no_go["checks"]})
+        attempt_payload: Dict[str, object] = {
+            "attempt": idx + 1,
+            "improb_threshold": thr,
+            "pass": bool(go_no_go["pass"]),
+            "checks": go_no_go["checks"],
+        }
         if bool(go_no_go["pass"]):
+            attempt_payload["threshold_decision_reason"] = "pass_no_retry"
+            attempts.append(attempt_payload)
             preflight_pass = True
             break
+        next_thr, reason = _next_preflight_threshold(
+            policy=str(args.preflight_retry_policy),
+            current=thr,
+            go_no_go=go_no_go,
+            up_step=float(args.preflight_threshold_up_step),
+            down_step=float(args.preflight_threshold_down_step),
+            min_value=float(args.preflight_threshold_min),
+            max_value=float(args.preflight_threshold_max),
+        )
+        attempt_payload["threshold_decision_reason"] = reason
+        attempt_payload["next_improb_threshold"] = next_thr
+        attempts.append(attempt_payload)
+        if next_thr is None:
+            break
+        thr = float(next_thr)
 
-    status_payload: Dict[str, object] = {"mode": "preflight", "profile": args.profile, "preflight_pass": preflight_pass, "attempts": attempts}
+    status_payload: Dict[str, object] = {
+        "mode": "preflight",
+        "profile": args.profile,
+        "campaign_id": str(args.campaign_id or "").strip(),
+        "seed_offset": int(args.seed_offset),
+        "preflight_pass": preflight_pass,
+        "attempts": attempts,
+    }
 
     if preflight_pass and bool(args.preflight_launch_full):
         full_args = argparse.Namespace(**vars(args))

@@ -332,3 +332,118 @@ Blocking-вердикт по `quality_gates.csv`:
 
 Это делает рассказ для аудитории прозрачным: 
 «мы не подгоняли модель до формального лимита волн, а остановились на научно устойчивой точке и подтвердили её независимым прогоном».
+
+## 10.15 Frozen protocol for evidence campaign
+
+Кампания запускается по замороженному протоколу:
+- Core PASS: только blocking-gates v3;
+- acceptance rule: минимум 2 из 3 full-run;
+- consistency rule: |NROY_i-NROY_j| <= 8 п.п., |R2_median_i-R2_median_j| <= 0.08;
+- wave control: `wave_min=2`, `wave_max=3`, `adaptive=true`.
+
+Техническая фиксация протокола:
+- `output_evidence_campaign_20260214/frozen_protocol.json`
+- итог кампании: `output_evidence_campaign_20260214/campaign_evidence_summary.json`
+
+## 10.16 Replication results (R1/R2/R3)
+
+Этот раздел заполняется автоматически после завершения Stage B.
+
+Ожидаемые артефакты:
+- `output_evidence_campaign_20260214/stage_b/R1/...`
+- `output_evidence_campaign_20260214/stage_b/R2/...`
+- `output_evidence_campaign_20260214/stage_b/R3/...`
+- `output_evidence_campaign_20260214/stage_b_summary.csv`
+
+## 10.17 Final evidence verdict
+
+Финальный вердикт кампании определяется только из:
+- `campaign_evidence_summary.json` (`status=SUCCESS|FAIL`),
+- `pass_runs_count`,
+- `consistency` блок.
+
+До завершения Stage C вердикт считается `PENDING`.
+
+### 10.16.1 Текущий факт по кампании evidence_20260214
+
+Статус кампании: `FAIL` на Stage A (`stage_a_no_core_pass_candidates`).
+
+Причина остановки:
+- Ни один из кандидатов `C1/C2/C3` не прошёл Core PASS из-за одного blocking-критерия:
+  - `NROY wave2 in [25,65]%` = FAIL
+  - C1: `70.00%`
+  - C2: `74.17%`
+  - C3: `70.00%`
+
+Что при этом было PASS во всех Stage A кандидатах:
+- `I_max median`, `I_max p95`
+- `Emulator CV-R2 median`, `CV-R2 share`
+- `bad_run_pct`, representative floors
+- structural economy checks (PriceDispersion / InventoryGap / CreditRejectionRate)
+
+Следствие:
+- Stage B (`R1/R2/R3`) не запускался, т.к. Stage A не дал валидного кандидата по замороженному Core PASS.
+
+## 10.18 Ночная кампания v2 (запуск)
+
+Запуск: `evidence_v2_20260215`.
+
+Директория кампании:
+- `output_evidence_campaign_v2_20260215`
+
+Логи:
+- `output_evidence_campaign_logs/evidence_v2_20260215.stdout.log`
+- `output_evidence_campaign_logs/evidence_v2_20260215.stderr.log`
+
+Ключевые отличия v2:
+- preflight retry policy: `nroy_safe`;
+- Stage A: 4 кандидата (`A1..A4`), `wave_n=160`, `wave_max=3`;
+- выбор по лучшей attempt внутри кандидата;
+- Stage B: `R1/R2/R3` только после валидного победителя Stage A.
+
+Файл итогового вердикта кампании:
+- `output_evidence_campaign_v2_20260215/campaign_evidence_summary.json`
+
+### 10.18.1 Итог ночной кампании v2 (evidence_v2_20260215)
+
+Статус кампании: `FAIL`.
+
+Что улучшилось относительно прошлой версии:
+- Stage A v2 выполнен успешно: все кандидаты `A1..A4` получили Core PASS по выбранной (best) attempt.
+- Победитель Stage A: `A3` (`improb_base=2.6`, `sigma_step=0.10`, `ev_q=0.75`),
+  `NROY=55.0%`, `R2_median=0.6374`.
+- NROY-safe retry сработал корректно (например, для `A2/A4`: `2.55 -> 2.45` при `NROY>65`).
+
+Почему итог всё равно FAIL:
+- Stage B (`R1/R2/R3`) дал `pass_runs_count=0` по blocking-вердикту.
+- Главный блокер во всех `R1/R2/R3`: confirmatory stability FAIL
+  (`nroy_delta_pp`: `42.86`, `32.57`, `68.57` при пороге `<=5`).
+- Дополнительно в `R2` провалены representative floors
+  (`Employment/Output/Consumption` ниже порогов).
+
+Интерпретация:
+- Основной риск больше не в попадании NROY-коридора на основном run,
+  а в воспроизводимости confirmatory (сильный сдвиг NROY между main и confirm).
+
+### 10.18.2 Дневной sanity-check после правок confirmatory
+
+Проверочный run:
+- `output_confirm_fix_check_20260215`
+- ключевая настройка: `confirm_seed_offset_base=31` + confirmatory `n` синхронизирован с финальной волной.
+
+Результат:
+- `nroy_delta_pp` снизился до `20.91` (раньше в репликациях было ~32..69),
+  но всё ещё выше порога `<=5`.
+- Значит требуема дополнительная фильтрация кандидатов по mini-confirm до Stage B.
+
+### 10.18.3 Запуск кампании v3
+
+Стартована новая кампания с усиленным pre-Stage-B фильтром:
+- outdir: `output_evidence_campaign_v3_20260215`
+- campaign-id: `evidence_v3_20260215`
+- `mini_confirm_max_delta_pp=10`
+- `confirm_seed_offset_base=31`
+
+Логи:
+- `output_evidence_campaign_logs/evidence_v3_20260215.stdout.log`
+- `output_evidence_campaign_logs/evidence_v3_20260215.stderr.log`

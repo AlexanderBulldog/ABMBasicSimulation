@@ -1,0 +1,5 @@
+wave,iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
+3,0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_20260214\stage_a\C1\02_final_wave\targets_for_wave_final.json,360.0,85.0,2.276644852367792,3.092696697251079
+3,1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_20260214\stage_a\C1\waves\wave_03\targets_tuned_iter1.json,360.0,80.83333333333333,2.373929590596295,3.2085939278380313
+3,2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_20260214\stage_a\C1\waves\wave_03\targets_tuned_iter2.json,360.0,77.5,2.4537090816383307,3.3156711450800787
+3,3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_20260214\stage_a\C1\waves\wave_03\targets_tuned_iter3.json,360.0,70.0,2.5325082821127265,3.4162881334360202

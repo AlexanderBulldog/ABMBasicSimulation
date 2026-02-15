@@ -1,0 +1,3 @@
+wave,trained,gate_metrics,skipped,gpr_cv_mean,gpr_cv_median,gpr_cv_share_ge
+wave1,29.0,22.0,8.0,0.6399499739564521,0.6906685191612806,1.0
+wave2,30.0,17.0,7.0,0.6111318255063762,0.646834888711547,1.0

@@ -1,0 +1,121 @@
+{
+  "mode": "preflight",
+  "profile": "nightly_v3",
+  "campaign_id": "evidence_v2_20260215",
+  "seed_offset": 0,
+  "preflight_pass": true,
+  "attempts": [
+    {
+      "attempt": 1,
+      "improb_threshold": 2.6,
+      "pass": true,
+      "checks": [
+        {
+          "check": "NROY wave2 in [25,65]%",
+          "pass": true,
+          "value": "55.00%",
+          "reason_code": "ok"
+        },
+        {
+          "check": "I_max median wave2 < 3.0",
+          "pass": true,
+          "value": "2.5747",
+          "reason_code": "ok"
+        },
+        {
+          "check": "I_max p95 wave2 < 4.5",
+          "pass": true,
+          "value": "3.0311",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Emulator CV-R2 median >= 0.60",
+          "pass": true,
+          "value": "0.6374",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Emulator CV-R2 share>=0.30 >= 0.65",
+          "pass": true,
+          "value": "1.0000",
+          "reason_code": "ok"
+        },
+        {
+          "check": "bad_run_pct_w2 <= 5%",
+          "pass": true,
+          "value": "0.00%",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Representative Employment_mean >= 45",
+          "pass": true,
+          "value": "min=72.5500",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Representative Output_mean >= 50",
+          "pass": true,
+          "value": "min=77.5112",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Representative Consumption_mean >= 50",
+          "pass": true,
+          "value": "min=92.2157",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Representative BankFailed_share == 0",
+          "pass": true,
+          "value": "max=0.000000",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Representative BalanceOK_share == 1",
+          "pass": true,
+          "value": "min=1.000000",
+          "reason_code": "ok"
+        },
+        {
+          "check": "SA components EV/OU/MD/CU present",
+          "pass": true,
+          "value": "components=['CU', 'EV', 'MD', 'OU']",
+          "reason_code": "ok"
+        },
+        {
+          "check": "SA has >=16 rows",
+          "pass": true,
+          "value": "rows=16",
+          "reason_code": "ok"
+        },
+        {
+          "check": "SA ranks present",
+          "pass": true,
+          "value": "rank_cols=True",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Structural: PriceDispersion median in [0.03,0.30]",
+          "pass": true,
+          "value": "median=0.0952",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Structural: |InventoryGap| p95 <= 1.5",
+          "pass": true,
+          "value": "p95_abs=0.3954",
+          "reason_code": "ok"
+        },
+        {
+          "check": "Structural: CreditRejectionRate mean <= 0.80",
+          "pass": true,
+          "value": "mean=0.6915; p90=1.0000",
+          "reason_code": "ok"
+        }
+      ],
+      "threshold_decision_reason": "pass_no_retry"
+    }
+  ],
+  "overnight_launched": false,
+  "reason": "preflight_pass_full_skipped"
+}
