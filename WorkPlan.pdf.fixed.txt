@@ -1,0 +1,3 @@
+FILE: WorkPlan.pdf | pages=1
+--- PAGE 1 ---
+       .      (ABM)  - ,    .   history matching  Andrianakis et al.          -  end-to-end  (     ),         .  . R13    .       -    ,      f() = (f 1(), . . . , f m()). 7f()      (GPR),    j j()  V C,j(). History matching     Ij() =|zjj()|p VO,j+VS,j+VM,j+VC,j(), z j   , V O,j,VS,j,VM,jVC,j  , - ,  (model discrepancy)   .      NROY ={: max jIj()< c}, c= 3.  .   Latin Hypercube Samling (wave 1  wave 2)  -   seed.          NROY       .      (bad runs),    -      ,           .       NROY       .  (EV/OU/MD/CU) . .  :  -R20.60.65  . History matching    ,    ,   - ,     .      ,     .   NROY  .   ,  -     model discrepancy,         . ,       .  .      -    ,   NROY             . 1

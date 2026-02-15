@@ -1,0 +1,23 @@
+check,pass,value,contour,blocking,gate_group,reason_code
+"NROY wave2 in [25,60]%",True,30.00%,legacy,False,emulator_hm,ok
+"NROY wave2 in [25,65]%",True,30.00%,stability,True,emulator_hm,ok
+I_max median wave2 < 3.0,True,2.7893,stability,True,emulator_hm,ok
+I_max p95 wave2 < 4.5,True,3.0926,stability,True,emulator_hm,ok
+Emulator CV-R2 median >= 0.60,True,0.7104,stability,True,emulator_hm,ok
+Emulator CV-R2 share>=0.30 >= 0.65,True,1.0000,stability,True,emulator_hm,ok
+bad_run_pct_w2 <= 5%,True,0.00%,stability,True,abm,ok
+Representative Employment_mean >= 45,True,min=81.9000,stability,True,interpretability,ok
+Representative Output_mean >= 50,True,min=91.5760,stability,True,interpretability,ok
+Representative Consumption_mean >= 50,True,min=99.8603,stability,True,interpretability,ok
+Representative BankFailed_share == 0,True,max=0.000000,stability,True,abm,ok
+Representative BalanceOK_share == 1,True,min=1.000000,stability,True,abm,ok
+SA components EV/OU/MD/CU present,True,"components=['CU', 'EV', 'MD', 'OU']",stability,True,confirmatory,ok
+SA has >=16 rows,True,rows=16,stability,True,confirmatory,ok
+SA ranks present,True,rank_cols=True,stability,True,confirmatory,ok
+"Structural: PriceDispersion median in [0.03,0.30]",True,median=0.0934,structural,True,interpretability,ok
+Structural: |InventoryGap| p95 <= 1.5,True,p95_abs=0.4497,structural,True,interpretability,ok
+Structural: CreditRejectionRate mean <= 0.80,True,mean=0.6427; p90=0.8915,structural,True,interpretability,ok
+Structural(reference): CreditRejections p90 <= 30,False,p90=89.5133,structural,False,interpretability,credit_rejections_reference_failed
+Structural(reference): CreditRejections p90 <= 90,True,p90=89.5133,structural,False,interpretability,ok
+Structural(reference): CreditRejections p90 improvement vs baseline >= 15%,False,"improve=14.59% (baseline=104.805, p90=89.5133)",structural,False,interpretability,credit_rejections_improvement_reference_failed
+Confirmatory stability (|NROY delta| <= 5.0pp and SA top2 stable),False,nroy_delta_pp=58.33; sa_top2_stable=False,stability,True,confirmatory,confirmatory_unstable

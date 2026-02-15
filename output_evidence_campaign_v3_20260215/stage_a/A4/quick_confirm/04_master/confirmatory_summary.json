@@ -1,0 +1,14 @@
+{
+  "main_nroy_pct": 64.16666666666667,
+  "confirm_nroy_pct": 62.5,
+  "nroy_delta_pp": -1.6666666666666714,
+  "main_sa_top2": [
+    "MD",
+    "OU"
+  ],
+  "confirm_sa_top2": [
+    "MD",
+    "OU"
+  ],
+  "sa_top2_stable": true
+}
