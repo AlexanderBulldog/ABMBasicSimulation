@@ -1,7 +1,0 @@
-check,pass,value,contour,blocking,gate_group,reason_code
-"Structural: PriceDispersion median in [0.03,0.30]",True,median=0.0952,structural,True,interpretability,ok
-Structural: |InventoryGap| p95 <= 1.5,True,p95_abs=0.3954,structural,True,interpretability,ok
-Structural: CreditRejectionRate mean <= 0.80,True,mean=0.6915; p90=1.0000,structural,True,interpretability,ok
-Structural(reference): CreditRejections p90 <= 30,False,p90=93.6400,structural,False,interpretability,credit_rejections_reference_failed
-Structural(reference): CreditRejections p90 <= 90,False,p90=93.6400,structural,False,interpretability,credit_rejections_abs_reference_failed
-Structural(reference): CreditRejections p90 improvement vs baseline >= 15%,False,"improve=10.65% (baseline=104.805, p90=93.6400)",structural,False,interpretability,credit_rejections_improvement_reference_failed

@@ -1,5 +1,0 @@
-iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
-0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\01_wave1\targets_calibrated.json,907.0,95.70011025358323,1.4353770447570204,2.843031081013565
-1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\02_wave2\targets_tuned_iter1.json,907.0,95.14884233737597,1.5499382424076766,2.98001023432752
-2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\02_wave2\targets_tuned_iter2.json,907.0,94.8180815876516,1.6473456617563156,3.1067623272025107
-3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_full\02_wave2\targets_tuned_iter3.json,907.0,92.72326350606394,1.7353326679609538,3.2222046709908727

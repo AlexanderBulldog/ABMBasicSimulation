@@ -1,5 +1,0 @@
-iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
-0,C:\Users\smart\OneDrive\Рабочий стол\Аспирантура\code\ABMBasicSimulation\output_model_tune_iter1_full\05_confirmatory\01_wave1\targets_calibrated.json,1198.0,97.41235392320534,1.4189045805289724,2.187816036821961
-1,C:\Users\smart\OneDrive\Рабочий стол\Аспирантура\code\ABMBasicSimulation\output_model_tune_iter1_full\05_confirmatory\02_wave2\targets_tuned_iter1.json,1198.0,97.16193656093489,1.5570794014355038,2.3642848265174803
-2,C:\Users\smart\OneDrive\Рабочий стол\Аспирантура\code\ABMBasicSimulation\output_model_tune_iter1_full\05_confirmatory\02_wave2\targets_tuned_iter2.json,1198.0,97.16193656093489,1.6960897072052965,2.5885646384630268
-3,C:\Users\smart\OneDrive\Рабочий стол\Аспирантура\code\ABMBasicSimulation\output_model_tune_iter1_full\05_confirmatory\02_wave2\targets_tuned_iter3.json,1198.0,96.91151919866444,1.829494397433348,2.8022557100031658

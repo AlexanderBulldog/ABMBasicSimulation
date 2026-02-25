@@ -1,9 +1,0 @@
-{
-  "stop_reason": "max_waves_reached",
-  "final_wave": 5,
-  "waves_run": 5,
-  "wave_min": 2,
-  "wave_max": 5,
-  "adaptive_waves": true,
-  "stability_shrink_delta_pp_max": 5.0
-}

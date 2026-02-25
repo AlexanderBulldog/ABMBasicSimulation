@@ -1,6 +1,0 @@
-wave,iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
-2,0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp03_adapt_emu\01_wave1\targets_for_wave_final.json,778.0,9.125964010282777,3.029921301753363,4.216432356927562
-2,1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp03_adapt_emu\02_wave2\targets_tuned_iter1.json,778.0,10.282776349614396,2.908501555402929,4.194918301215009
-2,2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp03_adapt_emu\02_wave2\targets_tuned_iter2.json,778.0,16.838046272493575,2.804632627897455,4.1474578143101155
-2,3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp03_adapt_emu\02_wave2\targets_tuned_iter3.json,778.0,24.55012853470437,2.715342676232149,4.102771011328024
-2,4,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp03_adapt_emu\02_wave2\targets_tuned_iter4.json,778.0,39.588688946015424,2.6525199593973885,4.083154431352831

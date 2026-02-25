@@ -1,4 +1,0 @@
-wave,wave_dir,n,steps,nroy_pct,Imax_median,Imax_p95,gpr_r2_cv_median,gpr_r2_cv_share_ge_threshold,shrink_mean,shrink_delta,wave_blocking_pass,stable_candidate
-1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_v3_20260215\stage_a\A4\quick_confirm\01_wave1,120,120,19.25287356321839,3.3723816776268607,5.147915304752384,0.6296025545338734,1.0,8.834370790314164,,False,False
-2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_v3_20260215\stage_a\A4\quick_confirm\02_final_wave,120,120,29.166666666666668,2.837669686355063,3.6507750398226855,0.6564286409375321,1.0,20.97335048904252,12.138979698728356,True,False
-3,C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_v3_20260215\stage_a\A4\quick_confirm\waves\wave_03,120,120,64.16666666666667,2.3923061433210067,3.3477236481145507,0.6586279212495556,1.0,28.74873579506298,7.7753853060204605,True,False

@@ -1,5 +1,0 @@
-FILE: WorkStatus.pdf | pages=2
---- PAGE 1 ---
-  :    .       -   (ABM)          history matching.      ,           .  .       ABMDesign of ExperimentsEmulationHistory MatchingRefinementValidation,       .   .   ABM   ,    .   13  ,  , - ,  ,      .       .      ;   2025   (, , , , ,  );    .  .       (Latin Hypercube Sampling): Wave 1: 400 , 3  , 180  ; Wave 2: 400    ,  ; 2530%      . .      , : (), V C().    -: 22   26;  R20.60.65;      . History matching.       - .     (OU),  (EV),  (MD)   (CU) .  :I <3;   NROY:50% (wave 1),48% (wave 2); I max  3.0.    .     -  p05p95.         1214%,     ,     .   1
---- PAGE 2 ---
-     (MD);  CU , EV  . .  NROY    68     - :   400 ;   ;   .        ;      5560,   7580. .       .  , , history matching,      -   .            . 2

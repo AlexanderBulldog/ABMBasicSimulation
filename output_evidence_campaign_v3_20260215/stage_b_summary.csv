@@ -1,4 +1,0 @@
-outdir,core_pass,nroy_pct,r2_median,imax_median,score,selected_attempt,selected_metrics,attempts_digest,confirm_nroy_delta_pp,run_id,seed_offset
-C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_v3_20260215\stage_b\R1,False,0.5943,0.6706,2.4367,1.02855,1,"{'nroy_pct': 0.5943, 'r2_median': 0.6706, 'imax_median': 2.4367}",[],16.57142857142857,R1,0
-C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_v3_20260215\stage_b\R2,False,0.4457,0.6878,2.6064,0.9181,1,"{'nroy_pct': 0.4457, 'r2_median': 0.6878, 'imax_median': 2.6064}",[],31.42857142857143,R2,200
-C:\Users\Alexander\Desktop\Education\Aspa\code\output_evidence_campaign_v3_20260215\stage_b\R3,False,0.35710000000000003,0.607,2.6172,0.6625000000000001,1,"{'nroy_pct': 0.35710000000000003, 'r2_median': 0.607, 'imax_median': 2.6172}",[],63.99999999999999,R3,400

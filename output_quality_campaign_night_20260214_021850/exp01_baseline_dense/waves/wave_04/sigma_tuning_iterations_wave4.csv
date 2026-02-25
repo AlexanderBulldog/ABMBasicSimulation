@@ -1,4 +1,0 @@
-wave,iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
-4,0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp01_baseline_dense\waves\wave_03\targets_for_wave_final.json,750.0,11.600000000000001,3.1675712501110205,3.3071290064792174
-4,1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp01_baseline_dense\waves\wave_04\targets_tuned_iter1.json,750.0,22.400000000000002,3.020866562096292,3.1525924826235068
-4,2,C:\Users\Alexander\Desktop\Education\Aspa\code\output_quality_campaign_night_20260214_021850\exp01_baseline_dense\waves\wave_04\targets_tuned_iter2.json,750.0,34.4,2.864070332433095,2.99045908908612

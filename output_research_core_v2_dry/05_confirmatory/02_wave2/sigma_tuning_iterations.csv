@@ -1,3 +1,0 @@
-iter,targets_path,rows,nroy_pct,Imax_median,Imax_p95
-0,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_dry\05_confirmatory\01_wave1\targets_calibrated.json,51.0,82.35294117647058,1.830063443016891,4.843523823661496
-1,C:\Users\Alexander\Desktop\Education\Aspa\code\output_research_core_v2_dry\05_confirmatory\02_wave2\targets_tuned_iter1.json,51.0,82.35294117647058,1.895767950862384,5.179206297209971

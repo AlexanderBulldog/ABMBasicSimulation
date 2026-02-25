@@ -1,5 +1,0 @@
-﻿{
-  "Employment_mean": { "target": 65.0, "sigma_obs": 5.0, "sigma_model": 7.5 },
-  "Output_mean": { "target": 80.0, "sigma_obs": 10.0, "sigma_model": 15.0 },
-  "Consumption_mean": { "target": 80.0, "sigma_obs": 10.0, "sigma_model": 15.0 }
-}
