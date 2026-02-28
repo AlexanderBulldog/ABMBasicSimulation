@@ -1,19 +1,18 @@
 .venv/
 .env
-
-# Python caches and build artifacts
 __pycache__/
 *.py[cod]
 *.pyd
 *.pyo
 .pytest_cache/
 
-# Local output and generated research artifacts
+# Local output and generated artifacts
+output/
+output_*/
 output*/
 handoff_analytics_pack_*/
 llm_pack_for_summary_*/
 reports/
 theory/
 
-# Local ad-hoc folders/files
-abm result
+abm result/
