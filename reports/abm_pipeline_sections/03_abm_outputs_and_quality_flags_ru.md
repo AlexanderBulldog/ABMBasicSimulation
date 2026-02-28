@@ -39,6 +39,10 @@ M^{mean} = \frac{1}{W}\sum_{t=T-W+1}^{T} M_t
 - `Firm_Cash`, `Firm_Debt`
 - `Inventories`
 - `AvgPrice`
+- `AvgMarkup`, `PriceDispersion`, `InventoryGap`
+- `SalesForecastError`, `InventoryTurnover`
+- `CreditRequests`, `CreditRejections`, `CreditRejectionRate`
+- `FirmDowntimeShare`, `ReentryCount`
 - `Bank_Equity`, `Bank_Loans`, `Bank_Deposits`
 - `BankFailed`, `BankResolved`, `BankResolutionAmount`, `BankResolutionHaircut`
 - `BankBailedOut`, `BankBailoutAmount`

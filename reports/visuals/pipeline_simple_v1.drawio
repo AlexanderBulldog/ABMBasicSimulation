@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-02-15T23:52:00.000Z" agent="Codex" version="24.7.17" type="device" compressed="false">
+  <diagram id="pipeline-simple-v1" name="Pipeline Simple V1">
+    <mxGraphModel dx="1280" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="ABM Research Pipeline (Sectioned Simple View)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#e9f1fb;fontColor=#1f4e79;fontStyle=1;fontSize=18;" vertex="1" parent="1">
+          <mxGeometry x="140" y="20" width="920" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s1" value="Раздел 1. Научный фундамент" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#f7fbff;fontColor=#1f4e79;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="1040" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="s1n1" value="1) Литература и методология&#xa;(ABM, HM, Andrianakis, surrogate modeling)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="120" y="150" width="460" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s1n2" value="2) Цель, гипотеза, критерии успеха&#xa;(blocking gates / DoD)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="620" y="150" width="460" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s1e1" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s1n1" target="s1n2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s2" value="Раздел 2. Модель и данные" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#f7fbff;fontColor=#1f4e79;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="340" width="1040" height="240" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2n1" value="3) Спецификация ABM-ядра&#xa;(агенты, правила, параметры, начальные условия)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="120" y="390" width="460" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2n2" value="4) ABM-прогоны и сбор синтетики&#xa;(multi-seed trajectories)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="620" y="390" width="460" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2n3" value="5) Метрики и quality flags&#xa;(макро, кредит, устойчивость, bad runs)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="370" y="480" width="460" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2e1" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s2n1" target="s2n2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2e2" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s2n2" target="s2n3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s3" value="Раздел 3. Калибровка и сужение параметров" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#f7fbff;fontColor=#1f4e79;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="620" width="1040" height="290" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3n1" value="6) LHS waves (wave 1..k)&#xa;покрытие параметрического пространства" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="120" y="670" width="300" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3n2" value="7) Эмулятор GPR&#xa;(CV-R2, coverage)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="450" y="670" width="300" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3n3" value="8) History Matching + NROY&#xa;(implausibility, EV/OU/MD/CU)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="780" y="670" width="300" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3n4" value="9) Refined intervals&#xa;и переход к следующей волне" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="370" y="770" width="460" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3e1" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s3n1" target="s3n2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3e2" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s3n2" target="s3n3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3e3" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s3n3" target="s3n4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s4" value="Раздел 4. Кампании и результаты" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#f7fbff;fontColor=#1f4e79;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="950" width="1040" height="300" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4n1" value="10) Preflight + quality gates v3&#xa;(go/no-go)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1000" width="300" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4n2" value="11) Full-run + R1/R2/R3&#xa;+ confirmatory checks" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="450" y="1000" width="300" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4n3" value="12) Scientific verdict&#xa;(что прошло/не прошло и почему)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#ffffff;fontColor=#1f4e79;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="780" y="1000" width="300" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4n4" value="13) Обновление WorkPlan / WorkStatus&#xa;и план следующей итерации" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1f4e79;fillColor=#e9f1fb;fontColor=#1f4e79;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="370" y="1110" width="460" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4e1" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s4n1" target="s4n2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4e2" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s4n2" target="s4n3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4e3" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s4n3" target="s4n4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cross1" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s1n2" target="s2n1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="cross2" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s2n3" target="s3n1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="cross3" style="endArrow=block;html=1;strokeColor=#1f4e79;" edge="1" parent="1" source="s3n4" target="s4n1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

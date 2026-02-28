@@ -206,7 +206,7 @@ Representative long-runs — это мост между статистическ
 
 ## 10.12 Генеральный прогон nightly v3 (запуск и протокол фиксации)
 
-Статус: `RUNNING`.
+Статус: `COMPLETED` (зафиксирован в `10.13`).
 
 Параметры запуска:
 - script: `scripts/run_research_core.py`
@@ -362,7 +362,7 @@ Blocking-вердикт по `quality_gates.csv`:
 - `pass_runs_count`,
 - `consistency` блок.
 
-До завершения Stage C вердикт считается `PENDING`.
+Для завершенной кампании `evidence_v3_20260215` вердикт уже определен: `FAIL`.
 
 ### 10.16.1 Текущий факт по кампании evidence_20260214
 
@@ -447,3 +447,23 @@ Blocking-вердикт по `quality_gates.csv`:
 Логи:
 - `output_evidence_campaign_logs/evidence_v3_20260215.stdout.log`
 - `output_evidence_campaign_logs/evidence_v3_20260215.stderr.log`
+
+### 10.18.4 Итог кампании v3 (evidence_v3_20260215)
+
+Файл итогов:
+- `output_evidence_campaign_v3_20260215/campaign_evidence_summary.json`
+
+Факты Stage A:
+- Все `A1..A4` получили Core PASS по выбранной attempt.
+- Победитель: `A4` (`improb_base=2.55`, `sigma_step=0.10`, `ev_q=0.75`).
+- Для `A4` mini-confirm стабилен: `quick_confirm_nroy_delta_abs_pp=1.67` п.п.
+
+Факты Stage B:
+- `R1`: `nroy=59.43%`, `r2=0.6706`, но confirmatory FAIL (`nroy_delta_pp=16.57`) и `Employment` floor FAIL.
+- `R2`: `nroy=44.57%`, `r2=0.6878`, но confirmatory FAIL (`31.43`) и `Employment/Output/Consumption` floors FAIL.
+- `R3`: `nroy=35.71%`, `r2=0.6070`, но confirmatory FAIL (`64.00`) и `Employment/Output/Consumption` floors FAIL.
+
+Итог кампании:
+- `status=FAIL`
+- `pass_runs_count=0`
+- acceptance rule `core_pass_at_least_2_of_3_and_consistency_ok` не выполнено.

@@ -96,8 +96,9 @@ debt_j > \kappa_F \cdot revenueRef_j \cdot \tau_F
 2. Wave1
 - Первый широкий проход по параметрам.
 
-3. Wave2
-- Второй проход в суженных интервалах после HM wave1.
+3. Wave2 / Final wave
+- Финальная волна в суженных интервалах после HM.
+- В разных контурах может называться `02_wave2` или `02_final_wave` (`final_wave_alias`).
 
 4. `bad_run`
 - Флаг патологического/невалидного прогона.
@@ -203,6 +204,9 @@ NROY=\{\theta:\ I_{max}(\theta)<c\}
 5. `sa_top2_stable`
 - Признак совпадения top-2 SA-компонент между main и confirmatory.
 
+6. `mini_confirm_nroy_delta_abs_pp`
+- Быстрый фильтр Stage A: абсолютная дельта NROY в quick-confirm, используемая до запуска Stage B.
+
 ---
 
 ## 14.9 Термины quality gates
@@ -214,12 +218,15 @@ NROY=\{\theta:\ I_{max}(\theta)<c\}
 - Все отдельные gates имеют `PASS`.
 
 3. Typical gates
-- NROY-диапазон,
+- NROY-диапазон (active-v3 обычно `[25,65]%`),
 - порог по `I_max median`,
 - representative floors (E/O/C),
 - банковая устойчивость,
 - полнота SA,
 - confirmatory-стабильность.
+
+4. `dual contour`
+- Режим, где одновременно ведутся active blocking-гейты и legacy/reference-гейты.
 
 ---
 

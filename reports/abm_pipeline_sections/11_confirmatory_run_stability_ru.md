@@ -1,207 +1,131 @@
 ﻿# Раздел 11. Confirmatory-run: независимая проверка устойчивости вывода
 
-Этот раздел описывает, как после выбора репрезентативных длинных траекторий (раздел 10) проверяется, что итог не является случайным артефактом конкретного LHS-дизайна.
+Этот раздел описывает, как после основного цикла проверяется, что вывод не является артефактом одного LHS-дизайна.
 
 ## 11.1 Зачем нужен confirmatory-run
 
-Даже при хорошем main-cycle возможен риск, что результат сильно зависит от конкретной выборки параметров в LHS.
+Даже если main-run проходит HM и structural checks, это не гарантирует воспроизводимость.
 
-Confirmatory-run нужен, чтобы ответить на вопрос:
+Confirmatory-run отвечает на вопрос:
 
-> "Сохранится ли научный вывод, если повторить pipeline на независимом дизайне с теми же правилами?"
+> "Сохранится ли вывод при независимом повторе финальной волны с теми же правилами HM/SA?"
 
-То есть это тест **воспроизводимости вывода**, а не дополнительная подгонка модели.
-
----
-
-## 11.2 Что именно считается независимым
-
-В текущей реализации независимость достигается за счет сдвига master-seed для LHS:
-
-\[
-seed_{w1}^{confirm}=seed_{w1}^{main}+seed\_offset,
-\quad
-seed_{w2}^{confirm}=seed_{w2}^{main}+seed\_offset
-\]
-
-где по умолчанию `seed_offset = 101`.
-
-При этом сохраняются неизменными:
-- ABM-ядро и bounds,
-- HM/SA формулы,
-- quality gate thresholds,
-- логика sigma-calibration/tuning.
-
-Такой дизайн проверяет именно устойчивость результата к альтернативной параметрической выборке.
+То есть это проверка устойчивости статистического вывода, а не дополнительная подгонка.
 
 ---
 
-## 11.3 Как строится confirmatory-ветка в пайплайне
+## 11.2 Что считается независимым в текущем ядре
 
-В `scripts/run_research_core.py` confirmatory выполняется как отдельный mini-pipeline:
+Независимость задается сдвигом master-seed через `--confirm-seed-offset-base`.
 
-1. `05_confirmatory/01_wave1`:
-- LHS wave1 с offset-seed,
-- обучение эмулятора,
-- HM,
-- SA,
-- `refined_intervals.csv`.
+Для кампании `evidence_v3_20260215` использовалось:
+- `confirm_seed_offset_base = 31`
+- отдельный запуск final-wave внутри `05_confirmatory/wave_XX`
 
-2. `05_confirmatory/02_wave2`:
-- LHS wave2 внутри confirmatory refined-intervals,
-- тот же iterative sigma-tuning (те же `max_iters`, `step`, `nroy_min/max`),
-- пересчет HM и SA.
-
-3. Сбор метрик стабильности и запись в `04_master/confirmatory_summary.json`.
-
-Идея: методологически тот же контур, но на другом дизайне.
+При этом фиксируются:
+- ABM-ядро,
+- bounds финальной волны,
+- правила HM/SA,
+- quality gates.
 
 ---
 
-## 11.4 Как именно считается стабильность
+## 11.3 Текущая структура confirmatory в пайплайне
 
-### 11.4.1 Стабильность по NROY
+В актуальном `scripts/run_research_core.py` confirmatory запускается для **финальной волны**, а не как отдельные `01_wave1/02_wave2`.
 
-Для main и confirmatory wave2 берется `history_matching.csv`, после чего:
+Артефакты:
+- `05_confirmatory/wave_XX/lhs_runs_confirm_waveXX.csv`
+- `05_confirmatory/wave_XX/history_matching.csv`
+- `05_confirmatory/wave_XX/sensitivity_uncertainty.csv`
+- `04_master/confirmatory_summary.json`
 
-\[
-NROY\_pct = 100 \cdot \frac{\#\{nroy=True\}}{N}
-\]
-
-Далее:
-
-\[
-\Delta_{NROY}^{pp}=NROY_{confirm}-NROY_{main}
-\]
-
-и проверяется модуль отклонения:
-
-\[
-|\Delta_{NROY}^{pp}| \le tol
-\]
-
-где `tol = confirmatory_nroy_tol_pp` (по протоколу и run-config обычно `5.0` п.п.).
-
-### 11.4.2 Стабильность по SA-top2
-
-Из `sensitivity_uncertainty.csv` берутся компоненты с `rank_at_max_reduction <= 2`:
-
-\[
-T = \{component: rank\_at\_max\_reduction \le 2\}
-\]
-
-После этого сравниваются множества:
-
-\[
-sa\_top2\_stable = (T_{main} = T_{confirm})
-\]
-
-Важно: сравниваются именно **множества**, порядок не учитывается.
+Ключевая идея: повторить именно финальную фазу сравнения main vs confirm на одном и том же протоколе.
 
 ---
 
-## 11.5 Критерий приемки confirmatory
+## 11.4 Как считается стабильность
 
-Confirmatory-check считается пройденным только если одновременно:
+Из `confirmatory_summary.json` берутся:
+- `main_nroy_pct`
+- `confirm_nroy_pct`
+- `nroy_delta_pp = confirm_nroy_pct - main_nroy_pct`
+- `main_sa_top2`, `confirm_sa_top2`
+- `sa_top2_stable`
 
-1. `abs(nroy_delta_pp) <= confirmatory_nroy_tol_pp`
-2. `sa_top2_stable == True`
+Критерий stable-confirm в blocking-гейтах:
 
-В `quality_gates.csv` это отдельная строка:
+\[
+|nroy\_delta\_pp| \le 5.0
+\]
+
+и
+
+\[
+sa\_top2\_stable = \text{True}
+\]
+
+Это отражается строкой:
 
 `Confirmatory stability (|NROY delta| <= 5.0pp and SA top2 stable)`
 
-Если этот check падает, итоговый scientific verdict (`PASS/FAIL`) тоже падает, даже если остальные блоки успешны.
+в `quality_gates.csv`.
 
 ---
 
-## 11.6 Какие артефакты формируются
+## 11.5 Факты по последним прогонам
 
-1. `05_confirmatory/01_wave1/*`
-- полный набор wave1-артефактов confirmatory ветки (`lhs_runs.csv`, `history_matching.csv`, `sensitivity_uncertainty.csv`, `targets_calibrated.json`, и т.д.).
+### 11.5.1 `output_research_core_v6_full_20260214_182812`
 
-2. `05_confirmatory/02_wave2/*`
-- полный набор wave2-артефактов,
-- включая `sigma_tuning_iterations.csv` и итерационные `targets_tuned_iter*.json`/`targets_calibrated_iter*.json`.
+- `nroy_delta_pp = 15.31`
+- `sa_top2_stable = True`
+- blocking confirmatory gate: `FAIL`
 
-3. `04_master/confirmatory_summary.json`
-- агрегированный summary стабильности:
-- `main_nroy_pct`
-- `confirm_nroy_pct`
-- `nroy_delta_pp`
-- `main_sa_top2`
-- `confirm_sa_top2`
-- `sa_top2_stable`
+Итог: основной full-run не прошел по воспроизводимости, даже при стабильном SA-top2.
 
-4. `04_master/research_core_tables/quality_gates.csv`
-- финальный PASS/FAIL по confirmatory-строке.
+### 11.5.2 Stage A winner в `output_evidence_campaign_v3_20260215`
 
-5. `04_master/research_core_report.md`
-- секция `Confirmatory Stability` с итоговыми числами.
+Победитель `A4` после quick-confirm:
+- `main_nroy_pct = 64.17`
+- `confirm_nroy_pct = 62.50`
+- `nroy_delta_pp = -1.67`
+- `sa_top2_stable = True`
 
----
+Итог: mini-confirm фильтр пройден (дельта в допуске).
 
-## 11.7 Как интерпретировать PASS и FAIL на практике
+### 11.5.3 Stage B (`R1/R2/R3`) в `evidence_v3_20260215`
 
-Пример из full-контура (`output_research_core_v2_full`):
-- `main_nroy_pct = 54.91`
-- `confirm_nroy_pct = 59.68`
-- `nroy_delta_pp = 4.77`
-- `main_sa_top2 = [MD, OU]`
-- `confirm_sa_top2 = [MD, OU]`
+- `R1`: `nroy_delta_pp = 16.57` -> FAIL
+- `R2`: `nroy_delta_pp = 31.43` -> FAIL
+- `R3`: `nroy_delta_pp = 64.00`, `sa_top2_stable=False` -> FAIL
 
-Итог: confirmatory gate = PASS (дельта в пределах 5 п.п. и SA-top2 стабильна).
-
-Пример из dry-контура (`output_research_core_v2_dry`):
-- `main_nroy_pct = 93.75`
-- `confirm_nroy_pct = 82.35`
-- `nroy_delta_pp = -11.40`
-- `sa_top2_stable = true`
-
-Итог: confirmatory gate = FAIL (SA стабильна, но дельта NROY слишком велика по модулю).
+Итог: confirmatory-нестабильность остается главным репликационным риском.
 
 ---
 
-## 11.8 Частые ошибки интерпретации
+## 11.6 Практическая интерпретация
 
-1. Ошибка: "NROY должны совпасть точно".
-- Неверно: проверяется допуск по модулю (`<= 5` п.п.), а не точное равенство.
+PASS confirmatory означает:
+- переносимость вывода на независимую выборку,
+- отсутствие критической чувствительности к конкретному LHS-случаю.
 
-2. Ошибка: "Важно совпадение порядка top-2".
-- Неверно: в коде сравниваются множества компонент, порядок не важен.
-
-3. Ошибка: "top-2 всегда ровно две компоненты".
-- Неверно: из-за dense-рангов и tie может получиться больше двух компонент в множестве (например, несколько компонент с одинаковым рангом 2).
-
-4. Ошибка: "Confirmatory заменяет representative long-run".
-- Неверно: это другой слой проверки; representative отвечает за long-run viability траекторий, confirmatory — за воспроизводимость статистического вывода HM/SA.
+FAIL confirmatory означает:
+- вывод пока не воспроизводится стабильно,
+- запуск нельзя считать достаточно сильным доказательством для итогового scientific PASS.
 
 ---
 
-## 11.9 Что делать, если confirmatory не проходит
+## 11.7 Что делать при confirmatory FAIL
 
-1. Если проваливается только `|nroy_delta_pp|`:
-- пересмотреть строгость sigma-tuning,
-- проверить, не переужесточен/переослаблен wave2 таргет-контур,
-- повторить main+confirmatory симметрично.
-
-2. Если проваливается `sa_top2_stable`:
-- проверить `sensitivity_uncertainty.csv` в обеих ветках,
-- оценить tie-сценарии рангов,
-- уточнить неопределенности (OU/EV/MD/CU), чтобы ранжирование стало устойчивее.
-
-3. Если падают оба условия:
-- рассматривать это как признак неустойчивого вывода,
-- не выносить итог в научный PASS без повторной стабилизации.
+1. Сохранять симметрию main/confirm по `n`, steps, bounds, sigma-policy.
+2. Отсеивать кандидатов Stage A по mini-confirm до репликаций Stage B.
+3. Снижать межзапусковую волатильность NROY (через устойчивые refined-bounds и conservative sigma-step).
+4. Фиксировать причину отказа по `reason_code=confirmatory_unstable` в gate-таблицах.
 
 ---
 
-## 11.10 Ключевая мысль раздела 11
+## 11.8 Ключевая мысль раздела 11
 
-Confirmatory-run делает результат не просто "подогнанным в одном запуске", а воспроизводимо устойчивым.
+Confirmatory-run в текущем контуре — это формальный тест воспроизводимости финального вывода.
 
-Он отвечает на главный вопрос научной надежности:
-
-> "Останется ли вывод тем же, если повторить весь HM/SA-контур на независимом дизайне?"
-
-Если ответ "да" по формальным критериям, итоговый PASS становится методологически защищенным.
+На момент последних данных (v6 + evidence_v3) именно confirmatory остается критическим блокером перехода от локально хороших прогонов к устойчивому научному PASS.

@@ -1,212 +1,128 @@
-# Раздел 12. Quality Gates и финальный научный вердикт
+﻿# Раздел 12. Quality Gates и финальный научный вердикт
 
-Этот раздел объясняет, как из множества артефактов (ABM, HM, SA, representative runs, confirmatory) собирается единый формальный ответ: `PASS` или `FAIL`.
+Этот раздел фиксирует, как из ABM/HM/SA/representative/confirmatory собирается формальный `PASS/FAIL`.
 
-## 12.1 Зачем нужны quality gates
+## 12.1 Почему quality gates обязательны
 
-Без формальных критериев легко получить "хороший" результат только в удобной интерпретации.  
-Quality gates делают оценку:
+Quality gates делают вывод:
+- воспроизводимым,
+- проверяемым,
+- независимым от субъективной интерпретации графиков.
 
-1. явной,
-2. воспроизводимой,
-3. независимой от субъективного впечатления.
-
-То есть это механизм научной дисциплины: один и тот же набор правил применяется ко всем запускам.
+Если хотя бы один blocking-gate не пройден, общий verdict = `FAIL`.
 
 ---
 
-## 12.2 Структура системы quality gates
+## 12.2 Два контура: active и legacy
 
-Итоговая таблица gate-проверок включает несколько блоков:
+В актуальном протоколе используются два контура:
 
-1. Калибровочная строгость HM
-2. Экономическая валидность representative long-runs
-3. Полнота SA-компонент
-4. Confirmatory-устойчивость
+1. `stability` (active-v3, blocking)
+- участвует в финальном scientific verdict.
 
-Финальное правило простое:
+2. `legacy/reference` (не blocking)
+- нужен как эталон сравнения, но не блокирует итоговый PASS/FAIL.
+
+Пример: одновременно присутствуют строки
+- `NROY wave2 in [25,65]%` (blocking)
+- `NROY wave2 in [25,60]%` (reference)
+
+---
+
+## 12.3 Актуальные blocking-гейты (v3)
+
+### 12.3.1 HM и эмулятор
+
+- `NROY wave2 in [25,65]%`
+- `I_max median wave2 < 3.0`
+- `I_max p95 wave2 < 4.5`
+- `Emulator CV-R2 median >= 0.60`
+- `Emulator CV-R2 share>=0.30 >= 0.65`
+
+### 12.3.2 ABM / representative
+
+- `bad_run_pct_w2 <= 5%`
+- `Representative Employment_mean >= 45`
+- `Representative Output_mean >= 50`
+- `Representative Consumption_mean >= 50`
+- `Representative BankFailed_share == 0`
+- `Representative BalanceOK_share == 1`
+
+### 12.3.3 SA и confirmatory
+
+- `SA components EV/OU/MD/CU present`
+- `SA has >=16 rows`
+- `SA ranks present`
+- `Confirmatory stability (|NROY delta| <= 5.0pp and SA top2 stable)`
+
+### 12.3.4 Structural (blocking)
+
+- `Structural: PriceDispersion median in [0.03,0.30]`
+- `Structural: |InventoryGap| p95 <= 1.5`
+- `Structural: CreditRejectionRate mean <= 0.80`
+
+---
+
+## 12.4 Формула итогового verdict
+
+Пусть `B` — множество blocking-строк из `quality_gates.csv`.
 
 \[
-PASS_{overall} = \bigwedge_{k=1}^{K} PASS_k
+overall\_pass = \bigwedge_{g \in B} pass_g
 \]
 
-где \(PASS_k\) — результат \(k\)-й проверки.
-
-Если хотя бы один gate = `FAIL`, общий вердикт = `FAIL`.
+Legacy/reference строки исключены из этой конъюнкции.
 
 ---
 
-## 12.3 HM-гейты
+## 12.5 Актуальный результат по full-run v6
 
-## 12.3.1 Диапазон NROY
+Источник: `output_research_core_v6_full_20260214_182812/04_master/research_core_tables/quality_gates.csv`.
 
-\[
-NROY\_pct = 100 \cdot \frac{\#\{\theta:\ nroy=True\}}{N}
-\]
+Blocking FAIL:
+- `NROY wave2 in [25,65]%` -> `68.40%` (выше верхней границы)
+- `Emulator CV-R2 median >= 0.60` -> `0.5570`
+- `Confirmatory stability` -> `nroy_delta_pp=15.31`
 
-Условие:
+Blocking PASS:
+- `I_max median=2.4292`, `I_max p95=2.9273`
+- representative floors и банковая устойчивость
+- SA полнота
+- structural checks (PriceDispersion/InventoryGap/CreditRejectionRate mean)
 
-\[
-NROY_{min} \le NROY\_pct \le NROY_{max}
-\]
-
-В текущем протоколе:
-- \(NROY_{min}=25\%\)
-- \(NROY_{max}=60\%\)
-
-Смысл:
-- слишком высокий NROY -> фильтр слишком мягкий, слабая дискриминация,
-- слишком низкий NROY -> фильтр переужесточен, риск потерять реалистичные режимы.
-
-## 12.3.2 Центральный уровень implausibility
-
-\[
-I_{max}^{median} < I_{thr}
-\]
-
-В протоколе \(I_{thr}=3.2\).
-
-Смысл:
-- даже если NROY в диапазоне, медианный \(I_{max}\) должен оставаться разумно низким.
+Итог по v6: `overall_gate_pass_v3 = FAIL`.
 
 ---
 
-## 12.4 Representative-гейты (длинный горизонт)
+## 12.6 Актуальный результат по evidence v3
 
-Проверяются минимумы/максимумы по `representative_summary.csv`:
+Источник: `output_evidence_campaign_v3_20260215/campaign_evidence_summary.json`.
 
-1. \(Employment_{min} \ge E_{min}\)
-2. \(Output_{min} \ge O_{min}\)
-3. \(Consumption_{min} \ge C_{min}\)
-4. \(BankFailed_{max} = 0\)
-5. \(BalanceOK_{min} = 1\)
+- Stage A: 4/4 кандидата прошли core-pass (после retry где нужно)
+- Winner: `A4`
+- Stage B (`R1/R2/R3`): `pass_runs_count = 0`
+- Acceptance rule: `core_pass_at_least_2_of_3_and_consistency_ok`
+- Campaign status: `FAIL`
 
-Где в текущем протоколе:
-- \(E_{min}=45\)
-- \(O_{min}=50\)
-- \(C_{min}=50\)
-
-Смысл:
-- итоговые траектории должны быть не только статистически допустимыми, но и экономически жизнеспособными.
+Ключевые блокеры Stage B:
+- confirmatory instability,
+- для `R1/R2/R3` дополнительно провалы representative floors по занятости/выпуску/потреблению.
 
 ---
 
-## 12.5 SA-гейты
+## 12.7 Что означает текущий FAIL
 
-Проверяется, что sensitivity-анализ:
+Текущий FAIL не означает, что ядро ABM нерабочее.
 
-1. содержит все 4 компоненты:
-- `EV`, `OU`, `MD`, `CU`
-
-2. содержит достаточное число строк (минимум 16 в стандартной сетке редукций)
-
-3. содержит колонки рангов:
-- `rank_at_max_reduction`
-- `rank_by_mean`
-
-Смысл:
-- интерпретация источников неопределенности должна быть полной, а не частичной.
+Он означает, что при текущих настройках и seed-репликациях не выполнены одновременно:
+- достаточная дискриминация NROY,
+- стабильность качества эмулятора,
+- воспроизводимость confirmatory на уровне, требуемом blocking-протоколом.
 
 ---
 
-## 12.6 Confirmatory-гейт
+## 12.8 Ключевая мысль раздела 12
 
-Проверяются два условия одновременно:
-
-1. стабильность NROY:
-\[
-|NROY_{confirm}-NROY_{main}| \le tol_{pp}
-\]
-
-2. стабильность SA top-2:
-\[
-Top2_{confirm} = Top2_{main}
-\]
-
-В протоколе:
-- \(tol_{pp}=5\) п.п.
-
-Смысл:
-- результат должен быть воспроизводим на независимом дизайне, а не случайным эффектом одного запуска.
-
----
-
-## 12.7 Как строится итоговый scientific verdict
-
-Алгоритм:
-
-1. Считать все промежуточные таблицы (HM, SA, representative, confirmatory).
-2. Преобразовать каждую проверку в булево `pass`.
-3. Сформировать таблицу `quality_gates.csv`.
-4. Вычислить:
-
-\[
-overall\_pass = \text{all}(pass_i)
-\]
-
-5. Записать итог в master-report:
-- `Overall quality gate: PASS/FAIL`
-- перечисление проваленных проверок (если есть).
-
----
-
-## 12.8 Как интерпретировать итог по текущему full-контуру
-
-Текущий финальный full-run после стабилизации дает:
-
-1. HM:
-- `NROY wave2` в целевом диапазоне,
-- `I_max median` ниже порога.
-
-2. Representative:
-- floors по E/O/C выполнены,
-- банк не падает, баланс консистентен.
-
-3. SA:
-- все компоненты присутствуют и ранжированы.
-
-4. Confirmatory:
-- дельта NROY в допуске,
-- SA top-2 стабильны.
-
-Итого:
-- `overall = PASS`.
-
----
-
-## 12.9 Типичные причины FAIL и что они означают
-
-1. FAIL по `NROY range`
-- фильтр неправильно откалиброван по жесткости.
-
-2. FAIL по `I_max median`
-- центральное несоответствие таргетам слишком велико.
-
-3. FAIL по representative floors
-- статистически допустимые точки не дают устойчивой экономической динамики.
-
-4. FAIL по confirmatory
-- вывод неустойчив к смене дизайна.
-
-Важно: разные FAIL имеют разную природу, поэтому corrective action должен быть адресным.
-
----
-
-## 12.10 Почему quality gates — это научный результат, а не бюрократия
-
-Quality gates не просто "чеклист".  
-Они формализуют три требования научной модели:
-
-1. **идентифицируемость** (достаточная параметрическая дискриминация),
-2. **реалистичность** (длинная экономическая жизнеспособность),
-3. **воспроизводимость** (устойчивость на confirmatory-run).
-
-Когда все гейты проходят, это означает, что результат не держится на одной удачной настройке или визуальном впечатлении, а выдерживает формальную проверку на нескольких независимых слоях.
-
----
-
-## 12.11 Ключевая мысль раздела 12
-
-Quality gates — это финальный "контроль качества научной правдоподобности" всего пайплайна.
-
-Они переводят длинную цепочку ABM -> LHS -> Emulator -> HM -> Wave2 -> SA -> representative -> confirmatory в однозначный, проверяемый и защищаемый вывод: `PASS` или `FAIL`.
+Quality gates в текущем состоянии дают однозначный и аудируемый вывод:
+- локальные успехи есть (часть волн и Stage A),
+- но финальный scientific verdict на последних данных (`v6`, `evidence_v3`) остается `FAIL` из-за воспроизводимости и стабильности по blocking-критериям.

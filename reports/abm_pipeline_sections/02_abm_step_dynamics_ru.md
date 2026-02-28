@@ -188,10 +188,13 @@ C_i^{des} = \alpha_i \cdot (available_i + income_i^{exp})
 
 3) При нехватке средств — кредит:
 \[
-creditCap_i = \kappa_H \cdot lastIncome_i
+debtStockCap_i = \frac{maxDSR_H \cdot lastIncome_i}{r_L}
 \]
 \[
-loan_i \le \min(C_i^{des}-available_i,\; creditCap_i-debt_i,\; bankAvailableCredit)
+borrowerLimit_i = \max(0,\; debtStockCap_i - 0.9\cdot debt_i)
+\]
+\[
+loan_i \le \min(C_i^{des}-available_i,\; borrowerLimit_i,\; bankAvailableCredit\cdot prudentialFactor)
 \]
 
 4) Фактическое потребление:
@@ -308,7 +311,9 @@ CreditCap = \mu \cdot \max(Equity,0)
 AvailableCredit = \max(0,\; CreditCap - (Loans_{hh}+Loans_{firm}))
 \]
 
-Фактическая выдача дополнительно уменьшается prudential-фактором, если банк близок к лимиту.
+Фактическая выдача дополнительно уменьшается prudential-фактором, если банк близок к лимиту:
+- при умеренной утилизации лимита фактор близок к 1,
+- при утилизации, близкой к капу, выдача плавно рационируется, а не обнуляется мгновенно.
 
 ### 2.6.3 Разрешение неплатежеспособности
 
